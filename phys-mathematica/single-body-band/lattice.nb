@@ -1,0 +1,1070 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     53467,       1062]
+NotebookOptionsPosition[     52887,       1044]
+NotebookOutlinePosition[     53287,       1060]
+CellTagsIndexPosition[     53244,       1057]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"An", " ", "open", " ", "boundary", " ", 
+    RowBox[{
+    "stripe", ".", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     "Modification"}], " ", "of", " ", "the", " ", "code", " ", "from", " ", 
+    "this", " ", 
+    RowBox[{"post", ":", "\[IndentingNewLine]", "https", ":"}]}], "//", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"mathematica", ".", "stackexchange", ".", "com"}], "/", 
+       "questions"}], "/", "61834"}], "/", "how"}], "-", "to", "-", "create", 
+    "-", "an", "-", "hexagonal", "-", "lattice", "-", "structure"}]}], 
+  "\[IndentingNewLine]", "*)"}]], "Input",
+ CellChangeTimes->{{3.8235543432401547`*^9, 
+  3.823554367627244*^9}},ExpressionUUID->"74d9829e-30be-4106-8ebc-\
+28a04bbd7661"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"unitCell", "[", 
+   RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+  RowBox[{"{", 
+   RowBox[{"Red", ",", 
+    RowBox[{"Disk", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"x", ",", "y"}], "}"}], ",", "0.1"}], "]"}], ",", "Gray", ",", 
+    "\[IndentingNewLine]", ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"x", ",", 
+         RowBox[{"y", "+", 
+          RowBox[{"1", "/", "2"}]}]}], "}"}]}], "}"}], "]"}], ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"x", ",", 
+         RowBox[{"y", "-", 
+          RowBox[{"1", "/", "2"}]}]}], "}"}]}], "}"}], "]"}], ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"x", "+", 
+          RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}], ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"x", "-", 
+          RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}]}], 
+   "}"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"unitCellbdydown", "[", 
+   RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+  RowBox[{"{", 
+   RowBox[{"Red", ",", 
+    RowBox[{"Disk", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"x", ",", "y"}], "}"}], ",", "0.1"}], "]"}], ",", "Gray", ",", 
+    "\[IndentingNewLine]", ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"x", "+", 
+          RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}], ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"x", ",", 
+         RowBox[{"y", "+", 
+          RowBox[{"1", "/", "2"}]}]}], "}"}]}], "}"}], "]"}], ",", 
+    RowBox[{"Line", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"x", "-", 
+          RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}]}], 
+   "}"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"unitCellbdyup", "[", 
+    RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+   RowBox[{"{", 
+    RowBox[{"Red", ",", 
+     RowBox[{"Disk", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"x", ",", "y"}], "}"}], ",", "0.1"}], "]"}], ",", "Gray", ",",
+      "\[IndentingNewLine]", ",", 
+     RowBox[{"Line", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"x", ",", "y"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"x", "+", 
+           RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}], ",", 
+     RowBox[{"Line", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"x", ",", "y"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"x", ",", 
+          RowBox[{"y", "-", 
+           RowBox[{"1", "/", "2"}]}]}], "}"}]}], "}"}], "]"}], ",", 
+     RowBox[{"Line", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"x", ",", "y"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"x", "-", 
+           RowBox[{"1", "/", "2"}]}], ",", "y"}], "}"}]}], "}"}], "]"}]}], 
+    "}"}]}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"nline", "=", "4"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Graphics", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"Block", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"unitVectA", "=", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+         RowBox[{"unitVectB", "=", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0"}], "}"}]}]}], "}"}], ",", 
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"unitCell", "@@", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"unitVectA", " ", "j"}], "+", 
+            RowBox[{"unitVectB", " ", "k"}]}], ")"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"j", ",", "1", ",", "nline"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"k", ",", "1", ",", "20"}], "}"}]}], "]"}]}], "]"}], ",", 
+     RowBox[{"Block", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"unitVectA", "=", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+         RowBox[{"unitVectB", "=", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0"}], "}"}]}]}], "}"}], ",", 
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"unitCellbdydown", "@@", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"unitVectA", " ", "0"}], "+", 
+            RowBox[{"unitVectB", " ", "k"}]}], ")"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"k", ",", "1", ",", "20"}], "}"}]}], "]"}]}], "]"}], ",", 
+     RowBox[{"Block", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"unitVectA", "=", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+         RowBox[{"unitVectB", "=", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0"}], "}"}]}]}], "}"}], ",", 
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"unitCellbdyup", "@@", 
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"unitVectA", " ", 
+             RowBox[{"(", 
+              RowBox[{"nline", "+", "1"}], ")"}]}], "+", 
+            RowBox[{"unitVectB", " ", "k"}]}], ")"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"k", ",", "1", ",", "20"}], "}"}]}], "]"}]}], "]"}]}], 
+    "}"}], ",", 
+   RowBox[{"ImageSize", "\[Rule]", "500"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.823552767282322*^9, 3.8235527974956217`*^9}, {
+  3.823552830974104*^9, 3.8235528313181086`*^9}, {3.823552864597989*^9, 
+  3.823552959680337*^9}, {3.823553012676037*^9, 3.823553046943719*^9}, {
+  3.823553701648794*^9, 3.823553887704769*^9}, {3.823554224671343*^9, 
+  3.8235542247891455`*^9}},
+ CellLabel->"In[43]:=",ExpressionUUID->"62f7a574-6421-4776-aad2-fe15ce904f6b"],
+
+Cell[BoxData[
+ GraphicsBox[{{{{
+      {RGBColor[1, 0, 0], DiskBox[{1, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{1, 1}, {1, Rational[3, 2]}}, {{1, 1}, {1, 1.5}}]], 
+       LineBox[NCache[{{1, 1}, {1, Rational[1, 2]}}, {{1, 1}, {1, 0.5}}]], 
+       LineBox[NCache[{{1, 1}, {Rational[3, 2], 1}}, {{1, 1}, {1.5, 1}}]], 
+       LineBox[NCache[{{1, 1}, {Rational[1, 2], 1}}, {{1, 1}, {0.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{2, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{2, 1}, {2, Rational[3, 2]}}, {{2, 1}, {2, 1.5}}]], 
+       LineBox[NCache[{{2, 1}, {2, Rational[1, 2]}}, {{2, 1}, {2, 0.5}}]], 
+       LineBox[NCache[{{2, 1}, {Rational[5, 2], 1}}, {{2, 1}, {2.5, 1}}]], 
+       LineBox[NCache[{{2, 1}, {Rational[3, 2], 1}}, {{2, 1}, {1.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{3, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{3, 1}, {3, Rational[3, 2]}}, {{3, 1}, {3, 1.5}}]], 
+       LineBox[NCache[{{3, 1}, {3, Rational[1, 2]}}, {{3, 1}, {3, 0.5}}]], 
+       LineBox[NCache[{{3, 1}, {Rational[7, 2], 1}}, {{3, 1}, {3.5, 1}}]], 
+       LineBox[NCache[{{3, 1}, {Rational[5, 2], 1}}, {{3, 1}, {2.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{4, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{4, 1}, {4, Rational[3, 2]}}, {{4, 1}, {4, 1.5}}]], 
+       LineBox[NCache[{{4, 1}, {4, Rational[1, 2]}}, {{4, 1}, {4, 0.5}}]], 
+       LineBox[NCache[{{4, 1}, {Rational[9, 2], 1}}, {{4, 1}, {4.5, 1}}]], 
+       LineBox[NCache[{{4, 1}, {Rational[7, 2], 1}}, {{4, 1}, {3.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{5, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{5, 1}, {5, Rational[3, 2]}}, {{5, 1}, {5, 1.5}}]], 
+       LineBox[NCache[{{5, 1}, {5, Rational[1, 2]}}, {{5, 1}, {5, 0.5}}]], 
+       LineBox[NCache[{{5, 1}, {Rational[11, 2], 1}}, {{5, 1}, {5.5, 1}}]], 
+       LineBox[NCache[{{5, 1}, {Rational[9, 2], 1}}, {{5, 1}, {4.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{6, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{6, 1}, {6, Rational[3, 2]}}, {{6, 1}, {6, 1.5}}]], 
+       LineBox[NCache[{{6, 1}, {6, Rational[1, 2]}}, {{6, 1}, {6, 0.5}}]], 
+       LineBox[NCache[{{6, 1}, {Rational[13, 2], 1}}, {{6, 1}, {6.5, 1}}]], 
+       LineBox[NCache[{{6, 1}, {Rational[11, 2], 1}}, {{6, 1}, {5.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{7, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{7, 1}, {7, Rational[3, 2]}}, {{7, 1}, {7, 1.5}}]], 
+       LineBox[NCache[{{7, 1}, {7, Rational[1, 2]}}, {{7, 1}, {7, 0.5}}]], 
+       LineBox[NCache[{{7, 1}, {Rational[15, 2], 1}}, {{7, 1}, {7.5, 1}}]], 
+       LineBox[NCache[{{7, 1}, {Rational[13, 2], 1}}, {{7, 1}, {6.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{8, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{8, 1}, {8, Rational[3, 2]}}, {{8, 1}, {8, 1.5}}]], 
+       LineBox[NCache[{{8, 1}, {8, Rational[1, 2]}}, {{8, 1}, {8, 0.5}}]], 
+       LineBox[NCache[{{8, 1}, {Rational[17, 2], 1}}, {{8, 1}, {8.5, 1}}]], 
+       LineBox[NCache[{{8, 1}, {Rational[15, 2], 1}}, {{8, 1}, {7.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{9, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{9, 1}, {9, Rational[3, 2]}}, {{9, 1}, {9, 1.5}}]], 
+       LineBox[NCache[{{9, 1}, {9, Rational[1, 2]}}, {{9, 1}, {9, 0.5}}]], 
+       LineBox[NCache[{{9, 1}, {Rational[19, 2], 1}}, {{9, 1}, {9.5, 1}}]], 
+       LineBox[NCache[{{9, 1}, {Rational[17, 2], 1}}, {{9, 1}, {8.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{10, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{10, 1}, {10, Rational[3, 2]}}, {{10, 1}, {10, 1.5}}]],
+        LineBox[
+        NCache[{{10, 1}, {10, Rational[1, 2]}}, {{10, 1}, {10, 0.5}}]], 
+       LineBox[NCache[{{10, 1}, {Rational[21, 2], 1}}, {{10, 1}, {10.5, 1}}]],
+        LineBox[
+        NCache[{{10, 1}, {Rational[19, 2], 1}}, {{10, 1}, {9.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{11, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{11, 1}, {11, Rational[3, 2]}}, {{11, 1}, {11, 1.5}}]],
+        LineBox[
+        NCache[{{11, 1}, {11, Rational[1, 2]}}, {{11, 1}, {11, 0.5}}]], 
+       LineBox[NCache[{{11, 1}, {Rational[23, 2], 1}}, {{11, 1}, {11.5, 1}}]],
+        LineBox[
+        NCache[{{11, 1}, {Rational[21, 2], 1}}, {{11, 1}, {10.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{12, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{12, 1}, {12, Rational[3, 2]}}, {{12, 1}, {12, 1.5}}]],
+        LineBox[
+        NCache[{{12, 1}, {12, Rational[1, 2]}}, {{12, 1}, {12, 0.5}}]], 
+       LineBox[NCache[{{12, 1}, {Rational[25, 2], 1}}, {{12, 1}, {12.5, 1}}]],
+        LineBox[
+        NCache[{{12, 1}, {Rational[23, 2], 1}}, {{12, 1}, {11.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{13, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{13, 1}, {13, Rational[3, 2]}}, {{13, 1}, {13, 1.5}}]],
+        LineBox[
+        NCache[{{13, 1}, {13, Rational[1, 2]}}, {{13, 1}, {13, 0.5}}]], 
+       LineBox[NCache[{{13, 1}, {Rational[27, 2], 1}}, {{13, 1}, {13.5, 1}}]],
+        LineBox[
+        NCache[{{13, 1}, {Rational[25, 2], 1}}, {{13, 1}, {12.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{14, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{14, 1}, {14, Rational[3, 2]}}, {{14, 1}, {14, 1.5}}]],
+        LineBox[
+        NCache[{{14, 1}, {14, Rational[1, 2]}}, {{14, 1}, {14, 0.5}}]], 
+       LineBox[NCache[{{14, 1}, {Rational[29, 2], 1}}, {{14, 1}, {14.5, 1}}]],
+        LineBox[
+        NCache[{{14, 1}, {Rational[27, 2], 1}}, {{14, 1}, {13.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{15, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{15, 1}, {15, Rational[3, 2]}}, {{15, 1}, {15, 1.5}}]],
+        LineBox[
+        NCache[{{15, 1}, {15, Rational[1, 2]}}, {{15, 1}, {15, 0.5}}]], 
+       LineBox[NCache[{{15, 1}, {Rational[31, 2], 1}}, {{15, 1}, {15.5, 1}}]],
+        LineBox[
+        NCache[{{15, 1}, {Rational[29, 2], 1}}, {{15, 1}, {14.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{16, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{16, 1}, {16, Rational[3, 2]}}, {{16, 1}, {16, 1.5}}]],
+        LineBox[
+        NCache[{{16, 1}, {16, Rational[1, 2]}}, {{16, 1}, {16, 0.5}}]], 
+       LineBox[NCache[{{16, 1}, {Rational[33, 2], 1}}, {{16, 1}, {16.5, 1}}]],
+        LineBox[
+        NCache[{{16, 1}, {Rational[31, 2], 1}}, {{16, 1}, {15.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{17, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{17, 1}, {17, Rational[3, 2]}}, {{17, 1}, {17, 1.5}}]],
+        LineBox[
+        NCache[{{17, 1}, {17, Rational[1, 2]}}, {{17, 1}, {17, 0.5}}]], 
+       LineBox[NCache[{{17, 1}, {Rational[35, 2], 1}}, {{17, 1}, {17.5, 1}}]],
+        LineBox[
+        NCache[{{17, 1}, {Rational[33, 2], 1}}, {{17, 1}, {16.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{18, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{18, 1}, {18, Rational[3, 2]}}, {{18, 1}, {18, 1.5}}]],
+        LineBox[
+        NCache[{{18, 1}, {18, Rational[1, 2]}}, {{18, 1}, {18, 0.5}}]], 
+       LineBox[NCache[{{18, 1}, {Rational[37, 2], 1}}, {{18, 1}, {18.5, 1}}]],
+        LineBox[
+        NCache[{{18, 1}, {Rational[35, 2], 1}}, {{18, 1}, {17.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{19, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{19, 1}, {19, Rational[3, 2]}}, {{19, 1}, {19, 1.5}}]],
+        LineBox[
+        NCache[{{19, 1}, {19, Rational[1, 2]}}, {{19, 1}, {19, 0.5}}]], 
+       LineBox[NCache[{{19, 1}, {Rational[39, 2], 1}}, {{19, 1}, {19.5, 1}}]],
+        LineBox[
+        NCache[{{19, 1}, {Rational[37, 2], 1}}, {{19, 1}, {18.5, 1}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{20, 1}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{20, 1}, {20, Rational[3, 2]}}, {{20, 1}, {20, 1.5}}]],
+        LineBox[
+        NCache[{{20, 1}, {20, Rational[1, 2]}}, {{20, 1}, {20, 0.5}}]], 
+       LineBox[NCache[{{20, 1}, {Rational[41, 2], 1}}, {{20, 1}, {20.5, 1}}]],
+        LineBox[
+        NCache[{{20, 1}, {Rational[39, 2], 1}}, {{20, 1}, {19.5, 1}}]]}}}, {{
+      {RGBColor[1, 0, 0], DiskBox[{1, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{1, 2}, {1, Rational[5, 2]}}, {{1, 2}, {1, 2.5}}]], 
+       LineBox[NCache[{{1, 2}, {1, Rational[3, 2]}}, {{1, 2}, {1, 1.5}}]], 
+       LineBox[NCache[{{1, 2}, {Rational[3, 2], 2}}, {{1, 2}, {1.5, 2}}]], 
+       LineBox[NCache[{{1, 2}, {Rational[1, 2], 2}}, {{1, 2}, {0.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{2, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{2, 2}, {2, Rational[5, 2]}}, {{2, 2}, {2, 2.5}}]], 
+       LineBox[NCache[{{2, 2}, {2, Rational[3, 2]}}, {{2, 2}, {2, 1.5}}]], 
+       LineBox[NCache[{{2, 2}, {Rational[5, 2], 2}}, {{2, 2}, {2.5, 2}}]], 
+       LineBox[NCache[{{2, 2}, {Rational[3, 2], 2}}, {{2, 2}, {1.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{3, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{3, 2}, {3, Rational[5, 2]}}, {{3, 2}, {3, 2.5}}]], 
+       LineBox[NCache[{{3, 2}, {3, Rational[3, 2]}}, {{3, 2}, {3, 1.5}}]], 
+       LineBox[NCache[{{3, 2}, {Rational[7, 2], 2}}, {{3, 2}, {3.5, 2}}]], 
+       LineBox[NCache[{{3, 2}, {Rational[5, 2], 2}}, {{3, 2}, {2.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{4, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{4, 2}, {4, Rational[5, 2]}}, {{4, 2}, {4, 2.5}}]], 
+       LineBox[NCache[{{4, 2}, {4, Rational[3, 2]}}, {{4, 2}, {4, 1.5}}]], 
+       LineBox[NCache[{{4, 2}, {Rational[9, 2], 2}}, {{4, 2}, {4.5, 2}}]], 
+       LineBox[NCache[{{4, 2}, {Rational[7, 2], 2}}, {{4, 2}, {3.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{5, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{5, 2}, {5, Rational[5, 2]}}, {{5, 2}, {5, 2.5}}]], 
+       LineBox[NCache[{{5, 2}, {5, Rational[3, 2]}}, {{5, 2}, {5, 1.5}}]], 
+       LineBox[NCache[{{5, 2}, {Rational[11, 2], 2}}, {{5, 2}, {5.5, 2}}]], 
+       LineBox[NCache[{{5, 2}, {Rational[9, 2], 2}}, {{5, 2}, {4.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{6, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{6, 2}, {6, Rational[5, 2]}}, {{6, 2}, {6, 2.5}}]], 
+       LineBox[NCache[{{6, 2}, {6, Rational[3, 2]}}, {{6, 2}, {6, 1.5}}]], 
+       LineBox[NCache[{{6, 2}, {Rational[13, 2], 2}}, {{6, 2}, {6.5, 2}}]], 
+       LineBox[NCache[{{6, 2}, {Rational[11, 2], 2}}, {{6, 2}, {5.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{7, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{7, 2}, {7, Rational[5, 2]}}, {{7, 2}, {7, 2.5}}]], 
+       LineBox[NCache[{{7, 2}, {7, Rational[3, 2]}}, {{7, 2}, {7, 1.5}}]], 
+       LineBox[NCache[{{7, 2}, {Rational[15, 2], 2}}, {{7, 2}, {7.5, 2}}]], 
+       LineBox[NCache[{{7, 2}, {Rational[13, 2], 2}}, {{7, 2}, {6.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{8, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{8, 2}, {8, Rational[5, 2]}}, {{8, 2}, {8, 2.5}}]], 
+       LineBox[NCache[{{8, 2}, {8, Rational[3, 2]}}, {{8, 2}, {8, 1.5}}]], 
+       LineBox[NCache[{{8, 2}, {Rational[17, 2], 2}}, {{8, 2}, {8.5, 2}}]], 
+       LineBox[NCache[{{8, 2}, {Rational[15, 2], 2}}, {{8, 2}, {7.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{9, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{9, 2}, {9, Rational[5, 2]}}, {{9, 2}, {9, 2.5}}]], 
+       LineBox[NCache[{{9, 2}, {9, Rational[3, 2]}}, {{9, 2}, {9, 1.5}}]], 
+       LineBox[NCache[{{9, 2}, {Rational[19, 2], 2}}, {{9, 2}, {9.5, 2}}]], 
+       LineBox[NCache[{{9, 2}, {Rational[17, 2], 2}}, {{9, 2}, {8.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{10, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{10, 2}, {10, Rational[5, 2]}}, {{10, 2}, {10, 2.5}}]],
+        LineBox[
+        NCache[{{10, 2}, {10, Rational[3, 2]}}, {{10, 2}, {10, 1.5}}]], 
+       LineBox[NCache[{{10, 2}, {Rational[21, 2], 2}}, {{10, 2}, {10.5, 2}}]],
+        LineBox[
+        NCache[{{10, 2}, {Rational[19, 2], 2}}, {{10, 2}, {9.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{11, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{11, 2}, {11, Rational[5, 2]}}, {{11, 2}, {11, 2.5}}]],
+        LineBox[
+        NCache[{{11, 2}, {11, Rational[3, 2]}}, {{11, 2}, {11, 1.5}}]], 
+       LineBox[NCache[{{11, 2}, {Rational[23, 2], 2}}, {{11, 2}, {11.5, 2}}]],
+        LineBox[
+        NCache[{{11, 2}, {Rational[21, 2], 2}}, {{11, 2}, {10.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{12, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{12, 2}, {12, Rational[5, 2]}}, {{12, 2}, {12, 2.5}}]],
+        LineBox[
+        NCache[{{12, 2}, {12, Rational[3, 2]}}, {{12, 2}, {12, 1.5}}]], 
+       LineBox[NCache[{{12, 2}, {Rational[25, 2], 2}}, {{12, 2}, {12.5, 2}}]],
+        LineBox[
+        NCache[{{12, 2}, {Rational[23, 2], 2}}, {{12, 2}, {11.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{13, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{13, 2}, {13, Rational[5, 2]}}, {{13, 2}, {13, 2.5}}]],
+        LineBox[
+        NCache[{{13, 2}, {13, Rational[3, 2]}}, {{13, 2}, {13, 1.5}}]], 
+       LineBox[NCache[{{13, 2}, {Rational[27, 2], 2}}, {{13, 2}, {13.5, 2}}]],
+        LineBox[
+        NCache[{{13, 2}, {Rational[25, 2], 2}}, {{13, 2}, {12.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{14, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{14, 2}, {14, Rational[5, 2]}}, {{14, 2}, {14, 2.5}}]],
+        LineBox[
+        NCache[{{14, 2}, {14, Rational[3, 2]}}, {{14, 2}, {14, 1.5}}]], 
+       LineBox[NCache[{{14, 2}, {Rational[29, 2], 2}}, {{14, 2}, {14.5, 2}}]],
+        LineBox[
+        NCache[{{14, 2}, {Rational[27, 2], 2}}, {{14, 2}, {13.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{15, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{15, 2}, {15, Rational[5, 2]}}, {{15, 2}, {15, 2.5}}]],
+        LineBox[
+        NCache[{{15, 2}, {15, Rational[3, 2]}}, {{15, 2}, {15, 1.5}}]], 
+       LineBox[NCache[{{15, 2}, {Rational[31, 2], 2}}, {{15, 2}, {15.5, 2}}]],
+        LineBox[
+        NCache[{{15, 2}, {Rational[29, 2], 2}}, {{15, 2}, {14.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{16, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{16, 2}, {16, Rational[5, 2]}}, {{16, 2}, {16, 2.5}}]],
+        LineBox[
+        NCache[{{16, 2}, {16, Rational[3, 2]}}, {{16, 2}, {16, 1.5}}]], 
+       LineBox[NCache[{{16, 2}, {Rational[33, 2], 2}}, {{16, 2}, {16.5, 2}}]],
+        LineBox[
+        NCache[{{16, 2}, {Rational[31, 2], 2}}, {{16, 2}, {15.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{17, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{17, 2}, {17, Rational[5, 2]}}, {{17, 2}, {17, 2.5}}]],
+        LineBox[
+        NCache[{{17, 2}, {17, Rational[3, 2]}}, {{17, 2}, {17, 1.5}}]], 
+       LineBox[NCache[{{17, 2}, {Rational[35, 2], 2}}, {{17, 2}, {17.5, 2}}]],
+        LineBox[
+        NCache[{{17, 2}, {Rational[33, 2], 2}}, {{17, 2}, {16.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{18, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{18, 2}, {18, Rational[5, 2]}}, {{18, 2}, {18, 2.5}}]],
+        LineBox[
+        NCache[{{18, 2}, {18, Rational[3, 2]}}, {{18, 2}, {18, 1.5}}]], 
+       LineBox[NCache[{{18, 2}, {Rational[37, 2], 2}}, {{18, 2}, {18.5, 2}}]],
+        LineBox[
+        NCache[{{18, 2}, {Rational[35, 2], 2}}, {{18, 2}, {17.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{19, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{19, 2}, {19, Rational[5, 2]}}, {{19, 2}, {19, 2.5}}]],
+        LineBox[
+        NCache[{{19, 2}, {19, Rational[3, 2]}}, {{19, 2}, {19, 1.5}}]], 
+       LineBox[NCache[{{19, 2}, {Rational[39, 2], 2}}, {{19, 2}, {19.5, 2}}]],
+        LineBox[
+        NCache[{{19, 2}, {Rational[37, 2], 2}}, {{19, 2}, {18.5, 2}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{20, 2}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{20, 2}, {20, Rational[5, 2]}}, {{20, 2}, {20, 2.5}}]],
+        LineBox[
+        NCache[{{20, 2}, {20, Rational[3, 2]}}, {{20, 2}, {20, 1.5}}]], 
+       LineBox[NCache[{{20, 2}, {Rational[41, 2], 2}}, {{20, 2}, {20.5, 2}}]],
+        LineBox[
+        NCache[{{20, 2}, {Rational[39, 2], 2}}, {{20, 2}, {19.5, 2}}]]}}}, {{
+      {RGBColor[1, 0, 0], DiskBox[{1, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{1, 3}, {1, Rational[7, 2]}}, {{1, 3}, {1, 3.5}}]], 
+       LineBox[NCache[{{1, 3}, {1, Rational[5, 2]}}, {{1, 3}, {1, 2.5}}]], 
+       LineBox[NCache[{{1, 3}, {Rational[3, 2], 3}}, {{1, 3}, {1.5, 3}}]], 
+       LineBox[NCache[{{1, 3}, {Rational[1, 2], 3}}, {{1, 3}, {0.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{2, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{2, 3}, {2, Rational[7, 2]}}, {{2, 3}, {2, 3.5}}]], 
+       LineBox[NCache[{{2, 3}, {2, Rational[5, 2]}}, {{2, 3}, {2, 2.5}}]], 
+       LineBox[NCache[{{2, 3}, {Rational[5, 2], 3}}, {{2, 3}, {2.5, 3}}]], 
+       LineBox[NCache[{{2, 3}, {Rational[3, 2], 3}}, {{2, 3}, {1.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{3, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{3, 3}, {3, Rational[7, 2]}}, {{3, 3}, {3, 3.5}}]], 
+       LineBox[NCache[{{3, 3}, {3, Rational[5, 2]}}, {{3, 3}, {3, 2.5}}]], 
+       LineBox[NCache[{{3, 3}, {Rational[7, 2], 3}}, {{3, 3}, {3.5, 3}}]], 
+       LineBox[NCache[{{3, 3}, {Rational[5, 2], 3}}, {{3, 3}, {2.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{4, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{4, 3}, {4, Rational[7, 2]}}, {{4, 3}, {4, 3.5}}]], 
+       LineBox[NCache[{{4, 3}, {4, Rational[5, 2]}}, {{4, 3}, {4, 2.5}}]], 
+       LineBox[NCache[{{4, 3}, {Rational[9, 2], 3}}, {{4, 3}, {4.5, 3}}]], 
+       LineBox[NCache[{{4, 3}, {Rational[7, 2], 3}}, {{4, 3}, {3.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{5, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{5, 3}, {5, Rational[7, 2]}}, {{5, 3}, {5, 3.5}}]], 
+       LineBox[NCache[{{5, 3}, {5, Rational[5, 2]}}, {{5, 3}, {5, 2.5}}]], 
+       LineBox[NCache[{{5, 3}, {Rational[11, 2], 3}}, {{5, 3}, {5.5, 3}}]], 
+       LineBox[NCache[{{5, 3}, {Rational[9, 2], 3}}, {{5, 3}, {4.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{6, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{6, 3}, {6, Rational[7, 2]}}, {{6, 3}, {6, 3.5}}]], 
+       LineBox[NCache[{{6, 3}, {6, Rational[5, 2]}}, {{6, 3}, {6, 2.5}}]], 
+       LineBox[NCache[{{6, 3}, {Rational[13, 2], 3}}, {{6, 3}, {6.5, 3}}]], 
+       LineBox[NCache[{{6, 3}, {Rational[11, 2], 3}}, {{6, 3}, {5.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{7, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{7, 3}, {7, Rational[7, 2]}}, {{7, 3}, {7, 3.5}}]], 
+       LineBox[NCache[{{7, 3}, {7, Rational[5, 2]}}, {{7, 3}, {7, 2.5}}]], 
+       LineBox[NCache[{{7, 3}, {Rational[15, 2], 3}}, {{7, 3}, {7.5, 3}}]], 
+       LineBox[NCache[{{7, 3}, {Rational[13, 2], 3}}, {{7, 3}, {6.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{8, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{8, 3}, {8, Rational[7, 2]}}, {{8, 3}, {8, 3.5}}]], 
+       LineBox[NCache[{{8, 3}, {8, Rational[5, 2]}}, {{8, 3}, {8, 2.5}}]], 
+       LineBox[NCache[{{8, 3}, {Rational[17, 2], 3}}, {{8, 3}, {8.5, 3}}]], 
+       LineBox[NCache[{{8, 3}, {Rational[15, 2], 3}}, {{8, 3}, {7.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{9, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{9, 3}, {9, Rational[7, 2]}}, {{9, 3}, {9, 3.5}}]], 
+       LineBox[NCache[{{9, 3}, {9, Rational[5, 2]}}, {{9, 3}, {9, 2.5}}]], 
+       LineBox[NCache[{{9, 3}, {Rational[19, 2], 3}}, {{9, 3}, {9.5, 3}}]], 
+       LineBox[NCache[{{9, 3}, {Rational[17, 2], 3}}, {{9, 3}, {8.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{10, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{10, 3}, {10, Rational[7, 2]}}, {{10, 3}, {10, 3.5}}]],
+        LineBox[
+        NCache[{{10, 3}, {10, Rational[5, 2]}}, {{10, 3}, {10, 2.5}}]], 
+       LineBox[NCache[{{10, 3}, {Rational[21, 2], 3}}, {{10, 3}, {10.5, 3}}]],
+        LineBox[
+        NCache[{{10, 3}, {Rational[19, 2], 3}}, {{10, 3}, {9.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{11, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{11, 3}, {11, Rational[7, 2]}}, {{11, 3}, {11, 3.5}}]],
+        LineBox[
+        NCache[{{11, 3}, {11, Rational[5, 2]}}, {{11, 3}, {11, 2.5}}]], 
+       LineBox[NCache[{{11, 3}, {Rational[23, 2], 3}}, {{11, 3}, {11.5, 3}}]],
+        LineBox[
+        NCache[{{11, 3}, {Rational[21, 2], 3}}, {{11, 3}, {10.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{12, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{12, 3}, {12, Rational[7, 2]}}, {{12, 3}, {12, 3.5}}]],
+        LineBox[
+        NCache[{{12, 3}, {12, Rational[5, 2]}}, {{12, 3}, {12, 2.5}}]], 
+       LineBox[NCache[{{12, 3}, {Rational[25, 2], 3}}, {{12, 3}, {12.5, 3}}]],
+        LineBox[
+        NCache[{{12, 3}, {Rational[23, 2], 3}}, {{12, 3}, {11.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{13, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{13, 3}, {13, Rational[7, 2]}}, {{13, 3}, {13, 3.5}}]],
+        LineBox[
+        NCache[{{13, 3}, {13, Rational[5, 2]}}, {{13, 3}, {13, 2.5}}]], 
+       LineBox[NCache[{{13, 3}, {Rational[27, 2], 3}}, {{13, 3}, {13.5, 3}}]],
+        LineBox[
+        NCache[{{13, 3}, {Rational[25, 2], 3}}, {{13, 3}, {12.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{14, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{14, 3}, {14, Rational[7, 2]}}, {{14, 3}, {14, 3.5}}]],
+        LineBox[
+        NCache[{{14, 3}, {14, Rational[5, 2]}}, {{14, 3}, {14, 2.5}}]], 
+       LineBox[NCache[{{14, 3}, {Rational[29, 2], 3}}, {{14, 3}, {14.5, 3}}]],
+        LineBox[
+        NCache[{{14, 3}, {Rational[27, 2], 3}}, {{14, 3}, {13.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{15, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{15, 3}, {15, Rational[7, 2]}}, {{15, 3}, {15, 3.5}}]],
+        LineBox[
+        NCache[{{15, 3}, {15, Rational[5, 2]}}, {{15, 3}, {15, 2.5}}]], 
+       LineBox[NCache[{{15, 3}, {Rational[31, 2], 3}}, {{15, 3}, {15.5, 3}}]],
+        LineBox[
+        NCache[{{15, 3}, {Rational[29, 2], 3}}, {{15, 3}, {14.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{16, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{16, 3}, {16, Rational[7, 2]}}, {{16, 3}, {16, 3.5}}]],
+        LineBox[
+        NCache[{{16, 3}, {16, Rational[5, 2]}}, {{16, 3}, {16, 2.5}}]], 
+       LineBox[NCache[{{16, 3}, {Rational[33, 2], 3}}, {{16, 3}, {16.5, 3}}]],
+        LineBox[
+        NCache[{{16, 3}, {Rational[31, 2], 3}}, {{16, 3}, {15.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{17, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{17, 3}, {17, Rational[7, 2]}}, {{17, 3}, {17, 3.5}}]],
+        LineBox[
+        NCache[{{17, 3}, {17, Rational[5, 2]}}, {{17, 3}, {17, 2.5}}]], 
+       LineBox[NCache[{{17, 3}, {Rational[35, 2], 3}}, {{17, 3}, {17.5, 3}}]],
+        LineBox[
+        NCache[{{17, 3}, {Rational[33, 2], 3}}, {{17, 3}, {16.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{18, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{18, 3}, {18, Rational[7, 2]}}, {{18, 3}, {18, 3.5}}]],
+        LineBox[
+        NCache[{{18, 3}, {18, Rational[5, 2]}}, {{18, 3}, {18, 2.5}}]], 
+       LineBox[NCache[{{18, 3}, {Rational[37, 2], 3}}, {{18, 3}, {18.5, 3}}]],
+        LineBox[
+        NCache[{{18, 3}, {Rational[35, 2], 3}}, {{18, 3}, {17.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{19, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{19, 3}, {19, Rational[7, 2]}}, {{19, 3}, {19, 3.5}}]],
+        LineBox[
+        NCache[{{19, 3}, {19, Rational[5, 2]}}, {{19, 3}, {19, 2.5}}]], 
+       LineBox[NCache[{{19, 3}, {Rational[39, 2], 3}}, {{19, 3}, {19.5, 3}}]],
+        LineBox[
+        NCache[{{19, 3}, {Rational[37, 2], 3}}, {{19, 3}, {18.5, 3}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{20, 3}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{20, 3}, {20, Rational[7, 2]}}, {{20, 3}, {20, 3.5}}]],
+        LineBox[
+        NCache[{{20, 3}, {20, Rational[5, 2]}}, {{20, 3}, {20, 2.5}}]], 
+       LineBox[NCache[{{20, 3}, {Rational[41, 2], 3}}, {{20, 3}, {20.5, 3}}]],
+        LineBox[
+        NCache[{{20, 3}, {Rational[39, 2], 3}}, {{20, 3}, {19.5, 3}}]]}}}, {{
+      {RGBColor[1, 0, 0], DiskBox[{1, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{1, 4}, {1, Rational[9, 2]}}, {{1, 4}, {1, 4.5}}]], 
+       LineBox[NCache[{{1, 4}, {1, Rational[7, 2]}}, {{1, 4}, {1, 3.5}}]], 
+       LineBox[NCache[{{1, 4}, {Rational[3, 2], 4}}, {{1, 4}, {1.5, 4}}]], 
+       LineBox[NCache[{{1, 4}, {Rational[1, 2], 4}}, {{1, 4}, {0.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{2, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{2, 4}, {2, Rational[9, 2]}}, {{2, 4}, {2, 4.5}}]], 
+       LineBox[NCache[{{2, 4}, {2, Rational[7, 2]}}, {{2, 4}, {2, 3.5}}]], 
+       LineBox[NCache[{{2, 4}, {Rational[5, 2], 4}}, {{2, 4}, {2.5, 4}}]], 
+       LineBox[NCache[{{2, 4}, {Rational[3, 2], 4}}, {{2, 4}, {1.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{3, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{3, 4}, {3, Rational[9, 2]}}, {{3, 4}, {3, 4.5}}]], 
+       LineBox[NCache[{{3, 4}, {3, Rational[7, 2]}}, {{3, 4}, {3, 3.5}}]], 
+       LineBox[NCache[{{3, 4}, {Rational[7, 2], 4}}, {{3, 4}, {3.5, 4}}]], 
+       LineBox[NCache[{{3, 4}, {Rational[5, 2], 4}}, {{3, 4}, {2.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{4, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{4, 4}, {4, Rational[9, 2]}}, {{4, 4}, {4, 4.5}}]], 
+       LineBox[NCache[{{4, 4}, {4, Rational[7, 2]}}, {{4, 4}, {4, 3.5}}]], 
+       LineBox[NCache[{{4, 4}, {Rational[9, 2], 4}}, {{4, 4}, {4.5, 4}}]], 
+       LineBox[NCache[{{4, 4}, {Rational[7, 2], 4}}, {{4, 4}, {3.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{5, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{5, 4}, {5, Rational[9, 2]}}, {{5, 4}, {5, 4.5}}]], 
+       LineBox[NCache[{{5, 4}, {5, Rational[7, 2]}}, {{5, 4}, {5, 3.5}}]], 
+       LineBox[NCache[{{5, 4}, {Rational[11, 2], 4}}, {{5, 4}, {5.5, 4}}]], 
+       LineBox[NCache[{{5, 4}, {Rational[9, 2], 4}}, {{5, 4}, {4.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{6, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{6, 4}, {6, Rational[9, 2]}}, {{6, 4}, {6, 4.5}}]], 
+       LineBox[NCache[{{6, 4}, {6, Rational[7, 2]}}, {{6, 4}, {6, 3.5}}]], 
+       LineBox[NCache[{{6, 4}, {Rational[13, 2], 4}}, {{6, 4}, {6.5, 4}}]], 
+       LineBox[NCache[{{6, 4}, {Rational[11, 2], 4}}, {{6, 4}, {5.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{7, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{7, 4}, {7, Rational[9, 2]}}, {{7, 4}, {7, 4.5}}]], 
+       LineBox[NCache[{{7, 4}, {7, Rational[7, 2]}}, {{7, 4}, {7, 3.5}}]], 
+       LineBox[NCache[{{7, 4}, {Rational[15, 2], 4}}, {{7, 4}, {7.5, 4}}]], 
+       LineBox[NCache[{{7, 4}, {Rational[13, 2], 4}}, {{7, 4}, {6.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{8, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{8, 4}, {8, Rational[9, 2]}}, {{8, 4}, {8, 4.5}}]], 
+       LineBox[NCache[{{8, 4}, {8, Rational[7, 2]}}, {{8, 4}, {8, 3.5}}]], 
+       LineBox[NCache[{{8, 4}, {Rational[17, 2], 4}}, {{8, 4}, {8.5, 4}}]], 
+       LineBox[NCache[{{8, 4}, {Rational[15, 2], 4}}, {{8, 4}, {7.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{9, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{9, 4}, {9, Rational[9, 2]}}, {{9, 4}, {9, 4.5}}]], 
+       LineBox[NCache[{{9, 4}, {9, Rational[7, 2]}}, {{9, 4}, {9, 3.5}}]], 
+       LineBox[NCache[{{9, 4}, {Rational[19, 2], 4}}, {{9, 4}, {9.5, 4}}]], 
+       LineBox[NCache[{{9, 4}, {Rational[17, 2], 4}}, {{9, 4}, {8.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{10, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{10, 4}, {10, Rational[9, 2]}}, {{10, 4}, {10, 4.5}}]],
+        LineBox[
+        NCache[{{10, 4}, {10, Rational[7, 2]}}, {{10, 4}, {10, 3.5}}]], 
+       LineBox[NCache[{{10, 4}, {Rational[21, 2], 4}}, {{10, 4}, {10.5, 4}}]],
+        LineBox[
+        NCache[{{10, 4}, {Rational[19, 2], 4}}, {{10, 4}, {9.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{11, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{11, 4}, {11, Rational[9, 2]}}, {{11, 4}, {11, 4.5}}]],
+        LineBox[
+        NCache[{{11, 4}, {11, Rational[7, 2]}}, {{11, 4}, {11, 3.5}}]], 
+       LineBox[NCache[{{11, 4}, {Rational[23, 2], 4}}, {{11, 4}, {11.5, 4}}]],
+        LineBox[
+        NCache[{{11, 4}, {Rational[21, 2], 4}}, {{11, 4}, {10.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{12, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{12, 4}, {12, Rational[9, 2]}}, {{12, 4}, {12, 4.5}}]],
+        LineBox[
+        NCache[{{12, 4}, {12, Rational[7, 2]}}, {{12, 4}, {12, 3.5}}]], 
+       LineBox[NCache[{{12, 4}, {Rational[25, 2], 4}}, {{12, 4}, {12.5, 4}}]],
+        LineBox[
+        NCache[{{12, 4}, {Rational[23, 2], 4}}, {{12, 4}, {11.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{13, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{13, 4}, {13, Rational[9, 2]}}, {{13, 4}, {13, 4.5}}]],
+        LineBox[
+        NCache[{{13, 4}, {13, Rational[7, 2]}}, {{13, 4}, {13, 3.5}}]], 
+       LineBox[NCache[{{13, 4}, {Rational[27, 2], 4}}, {{13, 4}, {13.5, 4}}]],
+        LineBox[
+        NCache[{{13, 4}, {Rational[25, 2], 4}}, {{13, 4}, {12.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{14, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{14, 4}, {14, Rational[9, 2]}}, {{14, 4}, {14, 4.5}}]],
+        LineBox[
+        NCache[{{14, 4}, {14, Rational[7, 2]}}, {{14, 4}, {14, 3.5}}]], 
+       LineBox[NCache[{{14, 4}, {Rational[29, 2], 4}}, {{14, 4}, {14.5, 4}}]],
+        LineBox[
+        NCache[{{14, 4}, {Rational[27, 2], 4}}, {{14, 4}, {13.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{15, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{15, 4}, {15, Rational[9, 2]}}, {{15, 4}, {15, 4.5}}]],
+        LineBox[
+        NCache[{{15, 4}, {15, Rational[7, 2]}}, {{15, 4}, {15, 3.5}}]], 
+       LineBox[NCache[{{15, 4}, {Rational[31, 2], 4}}, {{15, 4}, {15.5, 4}}]],
+        LineBox[
+        NCache[{{15, 4}, {Rational[29, 2], 4}}, {{15, 4}, {14.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{16, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{16, 4}, {16, Rational[9, 2]}}, {{16, 4}, {16, 4.5}}]],
+        LineBox[
+        NCache[{{16, 4}, {16, Rational[7, 2]}}, {{16, 4}, {16, 3.5}}]], 
+       LineBox[NCache[{{16, 4}, {Rational[33, 2], 4}}, {{16, 4}, {16.5, 4}}]],
+        LineBox[
+        NCache[{{16, 4}, {Rational[31, 2], 4}}, {{16, 4}, {15.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{17, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{17, 4}, {17, Rational[9, 2]}}, {{17, 4}, {17, 4.5}}]],
+        LineBox[
+        NCache[{{17, 4}, {17, Rational[7, 2]}}, {{17, 4}, {17, 3.5}}]], 
+       LineBox[NCache[{{17, 4}, {Rational[35, 2], 4}}, {{17, 4}, {17.5, 4}}]],
+        LineBox[
+        NCache[{{17, 4}, {Rational[33, 2], 4}}, {{17, 4}, {16.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{18, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{18, 4}, {18, Rational[9, 2]}}, {{18, 4}, {18, 4.5}}]],
+        LineBox[
+        NCache[{{18, 4}, {18, Rational[7, 2]}}, {{18, 4}, {18, 3.5}}]], 
+       LineBox[NCache[{{18, 4}, {Rational[37, 2], 4}}, {{18, 4}, {18.5, 4}}]],
+        LineBox[
+        NCache[{{18, 4}, {Rational[35, 2], 4}}, {{18, 4}, {17.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{19, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{19, 4}, {19, Rational[9, 2]}}, {{19, 4}, {19, 4.5}}]],
+        LineBox[
+        NCache[{{19, 4}, {19, Rational[7, 2]}}, {{19, 4}, {19, 3.5}}]], 
+       LineBox[NCache[{{19, 4}, {Rational[39, 2], 4}}, {{19, 4}, {19.5, 4}}]],
+        LineBox[
+        NCache[{{19, 4}, {Rational[37, 2], 4}}, {{19, 4}, {18.5, 4}}]]}}, {
+      {RGBColor[1, 0, 0], DiskBox[{20, 4}, 0.1]}, 
+      {GrayLevel[0.5], 
+       LineBox[NCache[{{20, 4}, {20, Rational[9, 2]}}, {{20, 4}, {20, 4.5}}]],
+        LineBox[
+        NCache[{{20, 4}, {20, Rational[7, 2]}}, {{20, 4}, {20, 3.5}}]], 
+       LineBox[NCache[{{20, 4}, {Rational[41, 2], 4}}, {{20, 4}, {20.5, 4}}]],
+        LineBox[
+        NCache[{{20, 4}, {Rational[39, 2], 4}}, {{20, 4}, {19.5, 4}}]]}}}}, {{
+     {RGBColor[1, 0, 0], DiskBox[{1, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{1, 0}, {Rational[3, 2], 0}}, {{1, 0}, {1.5, 0}}]], 
+      LineBox[NCache[{{1, 0}, {1, Rational[1, 2]}}, {{1, 0}, {1, 0.5}}]], 
+      LineBox[NCache[{{1, 0}, {Rational[1, 2], 0}}, {{1, 0}, {0.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{2, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{2, 0}, {Rational[5, 2], 0}}, {{2, 0}, {2.5, 0}}]], 
+      LineBox[NCache[{{2, 0}, {2, Rational[1, 2]}}, {{2, 0}, {2, 0.5}}]], 
+      LineBox[NCache[{{2, 0}, {Rational[3, 2], 0}}, {{2, 0}, {1.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{3, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{3, 0}, {Rational[7, 2], 0}}, {{3, 0}, {3.5, 0}}]], 
+      LineBox[NCache[{{3, 0}, {3, Rational[1, 2]}}, {{3, 0}, {3, 0.5}}]], 
+      LineBox[NCache[{{3, 0}, {Rational[5, 2], 0}}, {{3, 0}, {2.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{4, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{4, 0}, {Rational[9, 2], 0}}, {{4, 0}, {4.5, 0}}]], 
+      LineBox[NCache[{{4, 0}, {4, Rational[1, 2]}}, {{4, 0}, {4, 0.5}}]], 
+      LineBox[NCache[{{4, 0}, {Rational[7, 2], 0}}, {{4, 0}, {3.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{5, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{5, 0}, {Rational[11, 2], 0}}, {{5, 0}, {5.5, 0}}]], 
+      LineBox[NCache[{{5, 0}, {5, Rational[1, 2]}}, {{5, 0}, {5, 0.5}}]], 
+      LineBox[NCache[{{5, 0}, {Rational[9, 2], 0}}, {{5, 0}, {4.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{6, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{6, 0}, {Rational[13, 2], 0}}, {{6, 0}, {6.5, 0}}]], 
+      LineBox[NCache[{{6, 0}, {6, Rational[1, 2]}}, {{6, 0}, {6, 0.5}}]], 
+      LineBox[NCache[{{6, 0}, {Rational[11, 2], 0}}, {{6, 0}, {5.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{7, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{7, 0}, {Rational[15, 2], 0}}, {{7, 0}, {7.5, 0}}]], 
+      LineBox[NCache[{{7, 0}, {7, Rational[1, 2]}}, {{7, 0}, {7, 0.5}}]], 
+      LineBox[NCache[{{7, 0}, {Rational[13, 2], 0}}, {{7, 0}, {6.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{8, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{8, 0}, {Rational[17, 2], 0}}, {{8, 0}, {8.5, 0}}]], 
+      LineBox[NCache[{{8, 0}, {8, Rational[1, 2]}}, {{8, 0}, {8, 0.5}}]], 
+      LineBox[NCache[{{8, 0}, {Rational[15, 2], 0}}, {{8, 0}, {7.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{9, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{9, 0}, {Rational[19, 2], 0}}, {{9, 0}, {9.5, 0}}]], 
+      LineBox[NCache[{{9, 0}, {9, Rational[1, 2]}}, {{9, 0}, {9, 0.5}}]], 
+      LineBox[NCache[{{9, 0}, {Rational[17, 2], 0}}, {{9, 0}, {8.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{10, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{10, 0}, {Rational[21, 2], 0}}, {{10, 0}, {10.5, 0}}]], 
+      LineBox[NCache[{{10, 0}, {10, Rational[1, 2]}}, {{10, 0}, {10, 0.5}}]], 
+      LineBox[NCache[{{10, 0}, {Rational[19, 2], 0}}, {{10, 0}, {
+         9.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{11, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{11, 0}, {Rational[23, 2], 0}}, {{11, 0}, {11.5, 0}}]], 
+      LineBox[NCache[{{11, 0}, {11, Rational[1, 2]}}, {{11, 0}, {11, 0.5}}]], 
+      LineBox[
+       NCache[{{11, 0}, {Rational[21, 2], 0}}, {{11, 0}, {10.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{12, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{12, 0}, {Rational[25, 2], 0}}, {{12, 0}, {12.5, 0}}]], 
+      LineBox[NCache[{{12, 0}, {12, Rational[1, 2]}}, {{12, 0}, {12, 0.5}}]], 
+      LineBox[NCache[{{12, 0}, {Rational[23, 2], 0}}, {{12, 0}, {
+         11.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{13, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{13, 0}, {Rational[27, 2], 0}}, {{13, 0}, {13.5, 0}}]], 
+      LineBox[NCache[{{13, 0}, {13, Rational[1, 2]}}, {{13, 0}, {13, 0.5}}]], 
+      LineBox[NCache[{{13, 0}, {Rational[25, 2], 0}}, {{13, 0}, {
+         12.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{14, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{14, 0}, {Rational[29, 2], 0}}, {{14, 0}, {14.5, 0}}]], 
+      LineBox[NCache[{{14, 0}, {14, Rational[1, 2]}}, {{14, 0}, {14, 0.5}}]], 
+      LineBox[NCache[{{14, 0}, {Rational[27, 2], 0}}, {{14, 0}, {
+         13.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{15, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{15, 0}, {Rational[31, 2], 0}}, {{15, 0}, {15.5, 0}}]], 
+      LineBox[NCache[{{15, 0}, {15, Rational[1, 2]}}, {{15, 0}, {15, 0.5}}]], 
+      LineBox[NCache[{{15, 0}, {Rational[29, 2], 0}}, {{15, 0}, {
+         14.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{16, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{16, 0}, {Rational[33, 2], 0}}, {{16, 0}, {16.5, 0}}]], 
+      LineBox[NCache[{{16, 0}, {16, Rational[1, 2]}}, {{16, 0}, {16, 0.5}}]], 
+      LineBox[NCache[{{16, 0}, {Rational[31, 2], 0}}, {{16, 0}, {
+         15.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{17, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{17, 0}, {Rational[35, 2], 0}}, {{17, 0}, {17.5, 0}}]], 
+      LineBox[NCache[{{17, 0}, {17, Rational[1, 2]}}, {{17, 0}, {17, 0.5}}]], 
+      LineBox[NCache[{{17, 0}, {Rational[33, 2], 0}}, {{17, 0}, {
+         16.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{18, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{18, 0}, {Rational[37, 2], 0}}, {{18, 0}, {18.5, 0}}]], 
+      LineBox[NCache[{{18, 0}, {18, Rational[1, 2]}}, {{18, 0}, {18, 0.5}}]], 
+      LineBox[NCache[{{18, 0}, {Rational[35, 2], 0}}, {{18, 0}, {
+         17.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{19, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{19, 0}, {Rational[39, 2], 0}}, {{19, 0}, {19.5, 0}}]], 
+      LineBox[NCache[{{19, 0}, {19, Rational[1, 2]}}, {{19, 0}, {19, 0.5}}]], 
+      LineBox[NCache[{{19, 0}, {Rational[37, 2], 0}}, {{19, 0}, {
+         18.5, 0}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{20, 0}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{20, 0}, {Rational[41, 2], 0}}, {{20, 0}, {20.5, 0}}]], 
+      LineBox[NCache[{{20, 0}, {20, Rational[1, 2]}}, {{20, 0}, {20, 0.5}}]], 
+      LineBox[NCache[{{20, 0}, {Rational[39, 2], 0}}, {{20, 0}, {
+         19.5, 0}}]]}}}, {{
+     {RGBColor[1, 0, 0], DiskBox[{1, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{1, 5}, {Rational[3, 2], 5}}, {{1, 5}, {1.5, 5}}]], 
+      LineBox[NCache[{{1, 5}, {1, Rational[9, 2]}}, {{1, 5}, {1, 4.5}}]], 
+      LineBox[NCache[{{1, 5}, {Rational[1, 2], 5}}, {{1, 5}, {0.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{2, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{2, 5}, {Rational[5, 2], 5}}, {{2, 5}, {2.5, 5}}]], 
+      LineBox[NCache[{{2, 5}, {2, Rational[9, 2]}}, {{2, 5}, {2, 4.5}}]], 
+      LineBox[NCache[{{2, 5}, {Rational[3, 2], 5}}, {{2, 5}, {1.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{3, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{3, 5}, {Rational[7, 2], 5}}, {{3, 5}, {3.5, 5}}]], 
+      LineBox[NCache[{{3, 5}, {3, Rational[9, 2]}}, {{3, 5}, {3, 4.5}}]], 
+      LineBox[NCache[{{3, 5}, {Rational[5, 2], 5}}, {{3, 5}, {2.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{4, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{4, 5}, {Rational[9, 2], 5}}, {{4, 5}, {4.5, 5}}]], 
+      LineBox[NCache[{{4, 5}, {4, Rational[9, 2]}}, {{4, 5}, {4, 4.5}}]], 
+      LineBox[NCache[{{4, 5}, {Rational[7, 2], 5}}, {{4, 5}, {3.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{5, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{5, 5}, {Rational[11, 2], 5}}, {{5, 5}, {5.5, 5}}]], 
+      LineBox[NCache[{{5, 5}, {5, Rational[9, 2]}}, {{5, 5}, {5, 4.5}}]], 
+      LineBox[NCache[{{5, 5}, {Rational[9, 2], 5}}, {{5, 5}, {4.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{6, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{6, 5}, {Rational[13, 2], 5}}, {{6, 5}, {6.5, 5}}]], 
+      LineBox[NCache[{{6, 5}, {6, Rational[9, 2]}}, {{6, 5}, {6, 4.5}}]], 
+      LineBox[NCache[{{6, 5}, {Rational[11, 2], 5}}, {{6, 5}, {5.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{7, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{7, 5}, {Rational[15, 2], 5}}, {{7, 5}, {7.5, 5}}]], 
+      LineBox[NCache[{{7, 5}, {7, Rational[9, 2]}}, {{7, 5}, {7, 4.5}}]], 
+      LineBox[NCache[{{7, 5}, {Rational[13, 2], 5}}, {{7, 5}, {6.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{8, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{8, 5}, {Rational[17, 2], 5}}, {{8, 5}, {8.5, 5}}]], 
+      LineBox[NCache[{{8, 5}, {8, Rational[9, 2]}}, {{8, 5}, {8, 4.5}}]], 
+      LineBox[NCache[{{8, 5}, {Rational[15, 2], 5}}, {{8, 5}, {7.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{9, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{9, 5}, {Rational[19, 2], 5}}, {{9, 5}, {9.5, 5}}]], 
+      LineBox[NCache[{{9, 5}, {9, Rational[9, 2]}}, {{9, 5}, {9, 4.5}}]], 
+      LineBox[NCache[{{9, 5}, {Rational[17, 2], 5}}, {{9, 5}, {8.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{10, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{10, 5}, {Rational[21, 2], 5}}, {{10, 5}, {10.5, 5}}]], 
+      LineBox[NCache[{{10, 5}, {10, Rational[9, 2]}}, {{10, 5}, {10, 4.5}}]], 
+      LineBox[NCache[{{10, 5}, {Rational[19, 2], 5}}, {{10, 5}, {
+         9.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{11, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{11, 5}, {Rational[23, 2], 5}}, {{11, 5}, {11.5, 5}}]], 
+      LineBox[NCache[{{11, 5}, {11, Rational[9, 2]}}, {{11, 5}, {11, 4.5}}]], 
+      LineBox[NCache[{{11, 5}, {Rational[21, 2], 5}}, {{11, 5}, {
+         10.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{12, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{12, 5}, {Rational[25, 2], 5}}, {{12, 5}, {12.5, 5}}]], 
+      LineBox[NCache[{{12, 5}, {12, Rational[9, 2]}}, {{12, 5}, {12, 4.5}}]], 
+      LineBox[NCache[{{12, 5}, {Rational[23, 2], 5}}, {{12, 5}, {
+         11.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{13, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{13, 5}, {Rational[27, 2], 5}}, {{13, 5}, {13.5, 5}}]], 
+      LineBox[NCache[{{13, 5}, {13, Rational[9, 2]}}, {{13, 5}, {13, 4.5}}]], 
+      LineBox[NCache[{{13, 5}, {Rational[25, 2], 5}}, {{13, 5}, {
+         12.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{14, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{14, 5}, {Rational[29, 2], 5}}, {{14, 5}, {14.5, 5}}]], 
+      LineBox[NCache[{{14, 5}, {14, Rational[9, 2]}}, {{14, 5}, {14, 4.5}}]], 
+      LineBox[NCache[{{14, 5}, {Rational[27, 2], 5}}, {{14, 5}, {
+         13.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{15, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{15, 5}, {Rational[31, 2], 5}}, {{15, 5}, {15.5, 5}}]], 
+      LineBox[NCache[{{15, 5}, {15, Rational[9, 2]}}, {{15, 5}, {15, 4.5}}]], 
+      LineBox[NCache[{{15, 5}, {Rational[29, 2], 5}}, {{15, 5}, {
+         14.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{16, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{16, 5}, {Rational[33, 2], 5}}, {{16, 5}, {16.5, 5}}]], 
+      LineBox[NCache[{{16, 5}, {16, Rational[9, 2]}}, {{16, 5}, {16, 4.5}}]], 
+      LineBox[NCache[{{16, 5}, {Rational[31, 2], 5}}, {{16, 5}, {
+         15.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{17, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{17, 5}, {Rational[35, 2], 5}}, {{17, 5}, {17.5, 5}}]], 
+      LineBox[NCache[{{17, 5}, {17, Rational[9, 2]}}, {{17, 5}, {17, 4.5}}]], 
+      LineBox[
+       NCache[{{17, 5}, {Rational[33, 2], 5}}, {{17, 5}, {16.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{18, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{18, 5}, {Rational[37, 2], 5}}, {{18, 5}, {18.5, 5}}]], 
+      LineBox[NCache[{{18, 5}, {18, Rational[9, 2]}}, {{18, 5}, {18, 4.5}}]], 
+      LineBox[NCache[{{18, 5}, {Rational[35, 2], 5}}, {{18, 5}, {
+         17.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{19, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{19, 5}, {Rational[39, 2], 5}}, {{19, 5}, {19.5, 5}}]], 
+      LineBox[NCache[{{19, 5}, {19, Rational[9, 2]}}, {{19, 5}, {19, 4.5}}]], 
+      LineBox[NCache[{{19, 5}, {Rational[37, 2], 5}}, {{19, 5}, {
+         18.5, 5}}]]}}, {
+     {RGBColor[1, 0, 0], DiskBox[{20, 5}, 0.1]}, 
+     {GrayLevel[0.5], 
+      LineBox[NCache[{{20, 5}, {Rational[41, 2], 5}}, {{20, 5}, {20.5, 5}}]], 
+      LineBox[NCache[{{20, 5}, {20, Rational[9, 2]}}, {{20, 5}, {20, 4.5}}]], 
+      LineBox[NCache[{{20, 5}, {Rational[39, 2], 5}}, {{20, 5}, {
+         19.5, 5}}]]}}}},
+  ImageSize->500]], "Output",
+ CellChangeTimes->{
+  3.8235529243539743`*^9, {3.823553018313221*^9, 3.823553047646177*^9}, 
+   3.8235537322439117`*^9, {3.8235537850277843`*^9, 3.823553833160554*^9}, {
+   3.823553876905009*^9, 3.8235538883196144`*^9}, 3.823554225163241*^9},
+ CellLabel->"Out[47]=",ExpressionUUID->"3cfa5e6c-a9a9-4c08-9e37-94ac7339d8b2"]
+}, Open  ]]
+},
+WindowSize->{767, 467},
+WindowMargins->{{Automatic, 14.5}, {Automatic, 11}},
+FrontEndVersion->"12.1 for Microsoft Windows (64-bit) (June 19, 2020)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"18ca2661-251a-4949-b828-ace651c28430"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 794, 19, 126, "Input",ExpressionUUID->"74d9829e-30be-4106-8ebc-28a04bbd7661"],
+Cell[CellGroupData[{
+Cell[1377, 43, 6527, 199, 339, "Input",ExpressionUUID->"62f7a574-6421-4776-aad2-fe15ce904f6b"],
+Cell[7907, 244, 44964, 797, 160, "Output",ExpressionUUID->"3cfa5e6c-a9a9-4c08-9e37-94ac7339d8b2"]
+}, Open  ]]
+}
+]
+*)
+
