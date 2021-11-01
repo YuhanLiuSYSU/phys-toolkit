@@ -306,6 +306,9 @@ function [EE] = getS_(gamma, isNonHerm)
     % note the modification of abs()
     % This makes the non-hermitian second critical point correct.  
     EE = -etaReg'*log(abs(etaReg));
+    
+    % debug
+%     EE = -etaReg'*log(etaReg);
    
 end
 

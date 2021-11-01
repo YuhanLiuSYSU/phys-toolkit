@@ -29,8 +29,8 @@ if Expr == 1
 
 elseif Expr == 2
     
-    isFitvonNeumann = 0;
-    isFitNegativity = 0;
+    isFitvonNeumann = 1;
+    isFitNegativity = 1;
     isFitReflectedEnt = 0;
     isFitRenyiEntropy = 1;
     isFitRefRenyiEntropy = 0;
