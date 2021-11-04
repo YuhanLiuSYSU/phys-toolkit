@@ -10,8 +10,12 @@ Created on Fri Oct 29 13:04:34 2021
 import scipy.linalg as alg
 from numpy.linalg import inv
 import numpy as np
-from phys_python.common import check_zero, sort_ortho
 
+from toolkit.check import check_zero
+from eig.decomp import sort_ortho
+
+
+ERROR_CUTOFF = 10**(-6)
 
 class BosonBogoliubov:
     
@@ -36,17 +40,15 @@ class BosonBogoliubov:
         
         if any(e_val < 0):
             print(min(e_val))
-            print(" --! Error: not positive definite")
-            return 0, 0 
-  
+            print(" --! [BosonBogoliubov] Not positive definite")
+             
         k = np.diag(np.sqrt(e_val)) @ e_vec
         hp = k @ g @ k.conj().T
         
         is_decompk = check_zero(k.conj().T@k - h)
-        if (is_decompk > 10**(-8)):
-            print(" --! Error: k decomposition fails: "+str(is_decompk))
-            return 0, 0
-            
+        if (is_decompk > ERROR_CUTOFF):
+            print(" --! [BosonBogoliubov] k decomposition fails: "+str(is_decompk))
+                      
         L, U = sort_ortho(hp)
         idx = L.argsort()[::-1]   
         L = L[idx]
@@ -88,23 +90,28 @@ class BosonBogoliubov:
         g = self.g
         h = self.h
         
-        print(" --> Error for decomposition: " 
-              + str(check_zero(T.conj().T @ h @ T - E)))
-        print(" --> Error for commutator: " 
-              + str(check_zero(T.conj().T @ g @ T - g)))
+        decomp_error = check_zero(T.conj().T @ h @ T - E)
+        if decomp_error > ERROR_CUTOFF:
+            print(" --> [BosonBogoliubov] Error for decomposition: " + str(decomp_error))
+            
+        commute_error = check_zero(T.conj().T @ g @ T - g)
+        if commute_error > ERROR_CUTOFF:
+            print(" --> [BosonBogoliubov] Error for commutator: " + str(commute_error))
         
         
         numerics_re = np.sort(np.diag(E))
         expected_re = np.sort(abs(alg.eig(g @ h)[0]))
         if len(h) < 20:
-            print(" --> numerics: ")
+            print(" --> [BosonBogoliubov] numerics: ")
             # print(np.diag(E))
             print(numerics_re)
-            print(" --> expected: ")
+            print(" --> [BosonBogoliubov] expected: ")
             # g*h is not hermitian, so we need to use alg.eig
             print(expected_re)
         else:
-            print(" --> numerics - expected", str(check_zero(numerics_re-expected_re)))
+            numerics_error = check_zero(numerics_re-expected_re)
+            if numerics_error > ERROR_CUTOFF:
+                print(" --> [BosonBogoliubov]numerics - expected", str(numerics_error))
         
 
 if __name__ == "__main__":

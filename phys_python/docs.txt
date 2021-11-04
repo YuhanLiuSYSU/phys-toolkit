@@ -1,0 +1,16 @@
+
+- Dependence:
+  |
+  | - toolkit
+  |	|
+  |	| - `plot_style` depends on `entangle.ent_fit` (fix this)
+  |
+  | - eig
+  |	|
+  |	| - `decomp` depends on `toolkit.check`
+  |	| - `bogoliubov` depends on `toolkit.check`, `eig.decomp`
+  |
+  | - entangle
+  |	| - `ent_ferm` depends on `eig.decomp`
+  | | - `ent_many_body` depends on `toolkit.file_io`, `toolkit.plot_style`,
+  | |	`entangle.ent_fit`, `hamiltonian.spin_tool`
