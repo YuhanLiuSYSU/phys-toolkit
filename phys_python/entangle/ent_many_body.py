@@ -112,7 +112,9 @@ def get_ent_many(vR,vL,N,interval, q=-10, segment='left',renyi=1):
         if interval % 2 !=0: print(" --- check your input!!")
         
         start_point = int(N/2-interval/2)
-        sequence = np.hstack((np.array(range(0,start_point)), np.array(range(start_point+interval,N)),np.array(range(start_point,start_point+interval))))
+        sequence = np.hstack((np.array(range(0,start_point)), 
+                              np.array(range(start_point+interval,N)),
+                              np.array(range(start_point,start_point+interval))))
                 
         vR_new = np.transpose(vR.reshape(np.full(N,2)), sequence)
         vR_reshape = vR_new.reshape(2**(N-interval),2**interval)

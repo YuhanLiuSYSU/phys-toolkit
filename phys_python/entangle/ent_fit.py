@@ -34,6 +34,19 @@ class FitClass:
 
 
 def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0):
+    """
+    I recommend to use this in plot_style_s.py
+    
+    Example usage:
+        x_data = [12,14,16,18,20]
+        y_data = [0.7424, 0.7344, 0.7275, 0.7215, 0.7162]
+        
+        usr_func = lambda x, a, b, c: b*x**(-a)+c
+        coeffs = plot_style_s(x_data, y_data,
+                              x_labels = "$L$", y_labels = "$III$",
+                              fit_type = -1, usr_func = usr_func)
+    """
+    
     Fit_func = FitClass()
     Fit_func.renyi = renyi
     Fit_func.N = N
@@ -48,7 +61,6 @@ def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0):
         my_func = Fit_func.fit_func_LN
     else:
         my_func = usr_func
-    
     
     coeffs, coeffs_cov = curve_fit(my_func,interval,ent)
     

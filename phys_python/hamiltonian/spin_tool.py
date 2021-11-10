@@ -100,11 +100,16 @@ class Spin_hamiltonian:
                 if couple[0][i]!=0:                  
                     if len(couple)>2:
                     
-                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(couple[0][i], N, couple[1], i, couple[2], (i+couple[3][i]) % N)
-                        _,_, valn_array_new = set_Hamiltonian_offdiag(couple[0][i]*Jdn[i], N,couple[1], i, couple[2], (i+couple[3][i]) % N)
+                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i], N, couple[1], i, couple[2], (i+couple[3][i]) % N)
+                        _,_, valn_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i]*Jdn[i], N,couple[1], i, couple[2], (i+couple[3][i]) % N)
+                        
                     elif len(couple)==2:
-                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(couple[0][i], N, couple[1], i)
-                        _,_, valn_array_new = set_Hamiltonian_offdiag(couple[0][i]*Jsn[i], N,couple[1], i)
+                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i], N, couple[1], i)
+                        _,_, valn_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i]*Jsn[i], N,couple[1], i)
                         
                     x_array.extend(x_array_new)
                     y_array.extend(y_array_new)
@@ -117,8 +122,10 @@ class Spin_hamiltonian:
             for i in range(len(couple[0])):
                 if couple[0][i]!=0:
                     if len(couple)>2:
-                        hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
-                        hn_diag += set_Hamiltonian_diag(couple[0][i]*Jdn[i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
+                        hamiltonian_diag += set_Hamiltonian_diag(
+                            couple[0][i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
+                        hn_diag += set_Hamiltonian_diag(
+                            couple[0][i]*Jdn[i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
                     elif len(couple)==2:
                         hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],N,couple[1],i)
                         hn_diag += set_Hamiltonian_diag(couple[0][i]*Jsn[i],N,couple[1],i)
@@ -139,6 +146,7 @@ class Spin_hamiltonian:
         
     def get_P(self):
         """Generate translational operator P"""
+        
         N = self.N
         bands = self.bands
         PBC = self.PBC
@@ -319,9 +327,12 @@ class Spin_hamiltonian:
                 reg=range(labels[i]+1,labels[i+1]+1)
                 regV=V[:,reg]
                 Peig=regV.T @ P @ regV
-                # Sometimes, S obtained from the eigenvalue of Peig is not integer... This may because of our numerical way to get the eigensystem. Some states might be failed to be included.
+                # Sometimes, S obtained from the eigenvalue of Peig is not integer... 
+                # This may because of our numerical way to get the eigensystem. 
+                # Some states might be failed to be included.
                 
-                # Peig is not necessarily hermitian! Using eig might not be safe? I guess it is still safe because Peig = V*P_{diag}*V^{-1} is still valid
+                # Peig is not necessarily hermitian! Using eig might not be safe? 
+                # I guess it is still safe because Peig = V*P_{diag}*V^{-1} is still valid
                 
                 S,Vtrans=alg.eig(Peig)
                 R[:,reg] = regV@Vtrans
@@ -463,7 +474,8 @@ def set_Hamiltonian_diag(J, N, O1, index1,  O2=-1, index2=-1):
   # For example, when input index1=0, index2=1, and O=S_z, we will get
   # diag(I\otimes I\otimes \cdots S_z\cdots S_z)     
   
-  #BUG: IT IS BETTER TO FIX THIS TO OUR CONVENTION. THIS IS THE REASON WHY THE OVERLAP IS TO T RATHER THAN TBAR...
+  # BUG: IT IS BETTER TO FIX THIS TO OUR CONVENTION. 
+  # THIS IS THE REASON WHY THE OVERLAP IS TO T RATHER THAN TBAR...
 
     val_array = [J]
     for i in range(N-1, -1, -1):

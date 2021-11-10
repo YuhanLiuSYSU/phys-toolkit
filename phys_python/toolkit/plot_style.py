@@ -12,25 +12,33 @@ import numpy as np
 from entangle.ent_fit import fit_ent
 
 
-SMALL_SIZE = 16
-MEDIUM_SIZE = 18
-BIG_SIZE = 20
+SMALL_SIZE = 18
+MEDIUM_SIZE = 20
+BIG_SIZE = 22
 
 
-def plot_style_single(plt, x_labels = [], y_labels = [], title = []):
+def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
+                      x_lim = None, y_lim = None):
     
     plt.legend()
     
     if bool(x_labels): plt.xlabel(x_labels)
     if bool(y_labels): plt.ylabel(y_labels)
     if bool(title): plt.title(title)
+    if bool(x_lim): plt.xlim(x_lim)
+    if bool(y_lim): plt.ylim(y_lim)
+        
     fig = plt.gcf()
     plt.show() 
     
     return fig
 
 
-def plot_style_s(x_data, y_data, N = 0, fit_type = -10, usr_func = 0):
+def plot_style_s(x_data, y_data, x_labels = None, y_labels = None, 
+                 line_label = None, is_legend = 0, 
+                 N = 0, fit_type = -10, usr_func = 0, 
+                 Dir = [], is_save = 0, add_text = None, add_label = None,
+                 pre_ax = None):
     """
     
 
@@ -54,22 +62,50 @@ def plot_style_s(x_data, y_data, N = 0, fit_type = -10, usr_func = 0):
 
     """
     
-    SMALL_SIZE = 16
+ 
+    # plt.figure(figsize=(8, 6))
+    if not bool(pre_ax): 
+        fig = plt.figure()
+        ax = fig.add_axes([0,0,1,1])
+    else:
+        ax = pre_ax
+    ax.scatter(x_data, y_data)
+    ax.plot(x_data, y_data, label = line_label)
+    if is_legend == 1: ax.legend()
     
-    plt.figure(figsize=(8, 6))
-    plt.scatter(x_data, y_data)
+    
+    if bool(x_labels): ax.set_xlabel(x_labels)
+    if bool(y_labels): ax.set_ylabel(y_labels)
+    
     plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('figure', titlesize=BIG_SIZE)     # fontsize of the figure title
     
     
+    # plt.ylim([0.9*abs(y_data.min())*np.sign(y_data.min()),
+    #           1.1*abs(y_data.max())*np.sign(y_data.max())])
+    
+    ax = plt.gca()
+    if bool(add_text):        
+        ax.text(0.8, 0.9, add_text,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=ax.transAxes, fontsize = SMALL_SIZE)
+        
+    if bool(add_label):        
+        ax.text(0.06, 0.94, add_label,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=ax.transAxes, fontsize = SMALL_SIZE)
+    
     if fit_type>-10:
         n = 1
         coeffs, coeffs_cov, fit_func = fit_ent(
-            x_data, y_data, N, fit_type = fit_type, renyi = n, usr_func = usr_func)
+            x_data, y_data, N, fit_type = fit_type, renyi = n, 
+            usr_func = usr_func)
        
-        text_content = "$ c = %1.3f $" % coeffs[0]
+        text_content = "$ c[0] = %1.3f $" % coeffs[0]
         
         ax = plt.gca()
         ax.text(0.5 , 0.5, text_content,
@@ -79,13 +115,20 @@ def plot_style_s(x_data, y_data, N = 0, fit_type = -10, usr_func = 0):
        
         print(coeffs_cov)
         print(coeffs)
-        y_fit = fit_func(x_data,coeffs[0], coeffs[1])
-        plt.plot(x_data, y_fit, 'tab:orange')
+        y_fit = fit_func(x_data, *coeffs)
+        ax.plot(x_data, y_fit, 'tab:orange')
     else:
         coeffs = None
 
+    
+    if is_save == 1:
+        
+        save_name = input('--- Input the save fig name: (press <ENTER> for not to save)')
+        if save_name!="":
+            fig = plt.gcf()
+            fig.savefig(Dir.current_dir+save_name+'.pdf', bbox_inches='tight')
 
-    return coeffs
+    return ax, coeffs
 
 
 
@@ -102,9 +145,6 @@ def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], is_
         fit_and_plot(x_data,y_data,x_labels = x_labels, y_labels = y_labels)
     
     """
-    
-    
-    
     
     
     plt.figure(1)
