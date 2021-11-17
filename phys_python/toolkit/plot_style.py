@@ -9,6 +9,7 @@ matplotlib.rcParams['text.usetex'] = True
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 from entangle.ent_fit import fit_ent
 
 
@@ -20,8 +21,7 @@ BIG_SIZE = 22
 def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
                       x_lim = None, y_lim = None):
     
-    plt.legend()
-    
+   
     if bool(x_labels): plt.xlabel(x_labels)
     if bool(y_labels): plt.ylabel(y_labels)
     if bool(title): plt.title(title)
@@ -34,11 +34,14 @@ def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
     return fig
 
 
-def plot_style_s(x_data, y_data, x_labels = None, y_labels = None, 
-                 line_label = None, is_legend = 0, 
+def plot_style_s(x_data, y_datas, 
+                 x_labels = None, y_labels = None, 
+                 is_scatter = 1, scatter_size = 10,
+                 is_line = 1, line_labels = None,
                  N = 0, fit_type = -10, usr_func = 0, 
-                 Dir = [], is_save = 0, add_text = None, add_label = None,
-                 pre_ax = None):
+                 Dir = None, add_text = None, add_label = None,
+                 pre_ax = None, is_log = 0, my_color = None,
+                 sequence = 1):
     """
     
 
@@ -56,31 +59,56 @@ def plot_style_s(x_data, y_data, x_labels = None, y_labels = None,
     usr_func : TYPE, optional
         DESCRIPTION. The default is 0.
 
+    sequence:
+        Takes value from 0 to 1.
+
     Returns
     -------
     None.
 
     """
     
- 
-    # plt.figure(figsize=(8, 6))
     if not bool(pre_ax): 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(6, 4.5))
         ax = fig.add_axes([0,0,1,1])
     else:
         ax = pre_ax
-    ax.scatter(x_data, y_data)
-    ax.plot(x_data, y_data, label = line_label)
-    if is_legend == 1: ax.legend()
     
+        
+    # Accomadate different input type
+    if not isinstance(y_datas, list): y_datas = [y_datas]
+        
+    for i, y_data in enumerate(y_datas):
+        if is_scatter: 
+            if bool(my_color):
+                line = ax.scatter(x_data, y_data, scatter_size, color = my_color)
+            else:
+                line = ax.scatter(x_data, y_data, scatter_size)
+                
+        if is_line:
+            if bool(my_color):
+                line, = ax.plot(x_data, y_data, color = my_color)
+            else:
+                line, = ax.plot(x_data, y_data)
+
+        if bool(line_labels): line.set_label(line_labels[i])
+        
+              
+    ax.grid(True)
+    if bool(line_labels): ax.legend()
+    
+    if is_log == 1:
+        ax.set_xscale("log")
+        ax.set_yscale("log")
     
     if bool(x_labels): ax.set_xlabel(x_labels)
     if bool(y_labels): ax.set_ylabel(y_labels)
     
-    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('figure', titlesize=BIG_SIZE)     # fontsize of the figure title
+    plt.rc('axes', labelsize = MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('figure', titlesize = BIG_SIZE)     # fontsize of the figure title
+    plt.rc('legend', fontsize = SMALL_SIZE)
     
     
     # plt.ylim([0.9*abs(y_data.min())*np.sign(y_data.min()),
@@ -105,10 +133,12 @@ def plot_style_s(x_data, y_data, x_labels = None, y_labels = None,
             x_data, y_data, N, fit_type = fit_type, renyi = n, 
             usr_func = usr_func)
        
-        text_content = "$ c[0] = %1.3f $" % coeffs[0]
+        text_content = "$ a = %1.4f $" % coeffs[0]
+        # text_content = str(coeffs)
+        # print(text_content)
         
         ax = plt.gca()
-        ax.text(0.5 , 0.5, text_content,
+        ax.text(0.8 , 0.8, text_content,
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes, fontsize = SMALL_SIZE)
@@ -121,13 +151,10 @@ def plot_style_s(x_data, y_data, x_labels = None, y_labels = None,
         coeffs = None
 
     
-    if is_save == 1:
-        
-        save_name = input('--- Input the save fig name: (press <ENTER> for not to save)')
-        if save_name!="":
-            fig = plt.gcf()
-            fig.savefig(Dir.current_dir+save_name+'.pdf', bbox_inches='tight')
-
+    if bool(Dir) and sequence == 1: 
+        fig = plt.gcf()
+        Dir.save_fig(fig)
+    
     return ax, coeffs
 
 

@@ -29,7 +29,6 @@ Sz = np.array(([1, 0], [0, -1]), dtype=np.complex128)
 #----------------------------------#
 # Log: What's new:
     # the last element of couple_diag and couple_off is changed
-    # bands now has pre-assigned value
 
 
 
@@ -37,6 +36,39 @@ class Spin_hamiltonian:
     """Class for the spin Hamiltonian"""
     
     def __init__(self, N, couple_diag,couple_off,PBC, bands=1, const_term = 0):
+        """
+        
+
+        Parameters
+        ----------
+        N : int
+            Number of sites of the spin chain.
+        couple_diag : list
+                
+        
+        couple_off : list
+            example: couple_off = [[np.repeat([Jx],N),Sx,Sx,np.full(N,1)]]
+            
+            The first element specifies the hopping strength. It is a numpy array
+            If there are only two elements, it acts on single site i.
+            If there are three elements, it acts on neighboring sites S^x_i S^x_{i+1}
+            The fourth element specifies the hopping range S^x_{i} S^x_{i+n_i}.
+                When it is absent, we use the default value n_i = 1.
+                The input can be a single integer, or a numpy array.
+            
+        PBC : int
+            DESCRIPTION.
+        bands : int, optional
+            DESCRIPTION. The default is 1.
+        const_term : float, optional
+            DESCRIPTION. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
+        
         self.N = N
         self.bands = bands
         self.PBC = PBC
@@ -63,6 +95,7 @@ class Spin_hamiltonian:
         
         if PBC == 1 or PBC == -1:
             self.get_P()
+            print()
         
 
         
@@ -136,12 +169,14 @@ class Spin_hamiltonian:
         val_array.extend(hamiltonian_diag)
         valn_array.extend(hn_diag)
     
-        hamiltonian = csr_matrix((np.array(val_array), (x_array, y_array)), shape=(2**N, 2**N),dtype=np.complex128)
+        hamiltonian = csr_matrix((np.array(val_array), (x_array, y_array)), 
+                                 shape=(2**N, 2**N),dtype=np.complex128)
         self.hamiltonian = hamiltonian
        # self.hamiltonian = hamiltonian.astype(np.complex128)
         # This is very necessary
         
-        self.h2 = csr_matrix((np.array(valn_array), (x_array, y_array)), shape=(2**N, 2**N),dtype=np.complex128)
+        self.h2 = csr_matrix((np.array(valn_array), (x_array, y_array)), 
+                             shape=(2**N, 2**N),dtype=np.complex128)
         
         
     def get_P(self):
@@ -269,16 +304,35 @@ class Spin_hamiltonian:
     
     
     def sort_P(self,knum):
+        """
+        For Hermitian case.
+
+        Parameters
+        ----------
+        knum : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        E : TYPE
+            DESCRIPTION.
+        V_sort : TYPE
+            DESCRIPTION.
+        S : TYPE
+            DESCRIPTION.
+
+        """
         
         self.hamiltonian = self.hamiltonian.astype(np.float64)
         
         E, V = eigsh(self.hamiltonian, k=knum, which='LM')
         test = V.conj().T@ self.hamiltonian @ V
-        print("error for orthonormal: %f" % self.check_diag(V.conj().T @ V))
-        print("error for H: %f" % self.check_diag(test))
+        print("before sort: error for orthonormal: %f" % self.check_diag(V.conj().T @ V))
+        print("before sort: error for H: %f" % self.check_diag(test))
         
         V_sort = V+np.zeros(V.shape,dtype=complex)
-        # Need to specify V_sort is complex. Otherwise it will take real part of V_sort[:,reg]=regV@Vtrans
+        # Need to specify V_sort is complex. Otherwise it will take real part 
+        # of V_sort[:,reg]=regV@Vtrans
         labels=[]
         for i in range(len(E)-1):
             if E[i+1]-E[i]>0.0000001:
@@ -289,11 +343,22 @@ class Spin_hamiltonian:
                 reg = range(labels[i]+1,labels[i+1]+1)
                 regV = V[:,reg]
                 Peig = regV.conj().T@ self.P @regV
-                # Peig is not necessarily hermitian! Using eig might not be safe?
+                # Peig is not necessarily hermitian! So we use eig instead of eigh
+                # TODO: Vtrans is not guaranteed to be orthonormal...
                 S,Vtrans=alg.eig(Peig)
-                #vtest = regV@Vtrans
+                
+                # The following two lines check the orthogonality
+                vtest = regV@Vtrans
+                # print(alg.norm(vtest,axis=0))
+                test = Vtrans.conj().T @ Vtrans 
+                # TODO: Stest is not integer...
+                Stest = np.angle(S)*self.N/(2*pi)
+                # print(test)
+                # print()
+                
                 V_sort[:,reg]=regV@Vtrans
-        
+                
+    
         eig_P = V_sort.conj().T @ self.P @ V_sort
         S = np.angle(eig_P.diagonal())*self.N/(2*pi)
         
@@ -304,7 +369,8 @@ class Spin_hamiltonian:
         self.eigval = E
         self.R = V_sort
         self.L = V_sort 
-        # Even here, L and R are the same; we use the same notation so the code is compatible with the non-hermitian case.
+        # Even here, L and R are the same; we use the same notation so the code 
+        # is compatible with the non-hermitian case.
         
         self.S = S
         
@@ -514,11 +580,13 @@ def get_Hn(N,couple_off,couple_diag,n_total):
             if couple[0][i]!=0:  
                 if len(couple)>2:
                     for j in range(n_len):
-                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(couple[0][i]*Jdn[j,i], N, couple[1], i, couple[2],(i+couple[3][i])%N)
+                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i]*Jdn[j,i], N, couple[1], i, couple[2],(i+couple[3][i])%N)
                         valn_array[j].extend(val_array_new)
                 elif len(couple)==2:
                     for j in range(n_len):
-                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(couple[0][i]*Jsn[j,i], N, couple[1], i)
+                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i]*Jsn[j,i], N, couple[1], i)
                         valn_array[j].extend(val_array_new)
                        
                 x_array.extend(x_array_new)
@@ -529,10 +597,12 @@ def get_Hn(N,couple_off,couple_diag,n_total):
              if couple[0][i]!=0:  
                  if len(couple)>2 and couple[0][i]!=0:
                      for j in range(n_len):
-                         hn_diag[j] += set_Hamiltonian_diag(couple[0][i]*Jdn[j,i],N,couple[1],i,couple[2],(i+couple[3][i])%N)
+                         hn_diag[j] += set_Hamiltonian_diag(
+                             couple[0][i]*Jdn[j,i],N,couple[1],i,couple[2],(i+couple[3][i])%N)
                  elif len(couple)==2 and couple[0][i]!=0:
                      for j in range(n_len):
-                         hn_diag[j] += set_Hamiltonian_diag(couple[0][i]*Jsn[j,i],N,couple[1],i)
+                         hn_diag[j] += set_Hamiltonian_diag(
+                             couple[0][i]*Jsn[j,i],N,couple[1],i)
         
 
     x_array.extend(range(2**N))
@@ -541,7 +611,8 @@ def get_Hn(N,couple_off,couple_diag,n_total):
     hn_total=[]
     for j in range(n_len):
         valn_array[j].extend(hn_diag[j])
-        hn = csr_matrix((valn_array[j], (x_array, y_array)), shape=(2**N, 2**N),dtype=np.complex128)
+        hn = csr_matrix((valn_array[j], (x_array, y_array)), 
+                        shape=(2**N, 2**N),dtype=np.complex128)
         hn_total.append(hn)
         
     return hn_total
