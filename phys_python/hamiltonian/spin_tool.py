@@ -5,6 +5,9 @@ from math import pi
 from scipy.sparse.linalg import eigs, eigsh
 import matplotlib.pyplot as plt
 
+from toolkit.check import check_diag
+from eig.decomp import simult_diag, fold_brillouin
+
 
 Sx = np.array(([0, 1], [1, 0]), dtype=np.complex128)
 Sy = np.array(([0, -1j], [1j, 0]), dtype=np.complex128)
@@ -35,7 +38,8 @@ Sz = np.array(([1, 0], [0, -1]), dtype=np.complex128)
 class Spin_hamiltonian:
     """Class for the spin Hamiltonian"""
     
-    def __init__(self, N, couple_diag,couple_off,PBC, bands=1, const_term = 0):
+    def __init__(self, N, couple_diag,couple_off,PBC, bands=1, const_term = 0,
+                 ep1 = None, ep2 = None):
         """
         
 
@@ -76,6 +80,9 @@ class Spin_hamiltonian:
         self.couple_off = couple_off 
         self.const_term = const_term
         self.a = 1 # set a default value
+        
+        self.ep1 = ep1
+        self.ep2 = ep2
         
         for couple in self.couple_off: 
             if len(couple) == 3:
@@ -171,6 +178,14 @@ class Spin_hamiltonian:
     
         hamiltonian = csr_matrix((np.array(val_array), (x_array, y_array)), 
                                  shape=(2**N, 2**N),dtype=np.complex128)
+        
+        
+        if bool(self.ep1): 
+            hamiltonian = hamiltonian + self.ep1*self.get_P()
+        
+        if bool(self.ep2):
+            hamiltonian = hamiltonian + self.ep2*get_total_Sz(self.N)
+                
         self.hamiltonian = hamiltonian
        # self.hamiltonian = hamiltonian.astype(np.complex128)
         # This is very necessary
@@ -180,7 +195,9 @@ class Spin_hamiltonian:
         
         
     def get_P(self):
-        """Generate translational operator P"""
+        """
+        Generate translational operator P
+        """
         
         N = self.N
         bands = self.bands
@@ -198,7 +215,9 @@ class Spin_hamiltonian:
         val_array_P = np.repeat([1,PBC*1,PBC*1,1],2**(N-2))
         self.P = csr_matrix((val_array_P, (x_array_P, y_array_P)), shape=(2**N, 2**N))
         
+        return self.P
       
+        
     def sort_biortho(self,knum, eig_which='SR', PT='true'):
         
         eigval, eigvecs = eigs(self.hamiltonian, k=knum, which=eig_which)
@@ -260,9 +279,9 @@ class Spin_hamiltonian:
         eigvecs_sort = eigvecs_sort@eig_norm        
 
         print("error for orthonormal: %f" % 
-          self.check_diag(eigvecs_sort.T @ eigvecs_sort))
+          check_diag(eigvecs_sort.T @ eigvecs_sort))
         print("error for H: %f" % 
-          self.check_diag(abs(eigvecs_sort.T@ self.hamiltonian @eigvecs_sort)))
+          check_diag(abs(eigvecs_sort.T@ self.hamiltonian @eigvecs_sort)))
         
         self.eigval = eigval + self.const_term
         self.R = eigvecs_sort
@@ -284,32 +303,28 @@ class Spin_hamiltonian:
         return R@Up.T
 
         
-    def check_diag(self,matr):
-        matr_remove = matr-np.diag(np.diag(matr))
-        diag_error = np.sum(abs(matr_remove))
+    
+    
+    def sort_P_prod(self,knum):
         
-        if diag_error > 0.0000001:
-            plt.imshow(abs(matr), cmap = 'jet')
-            plt.colorbar()
-            # plt.rcParams["figure.figsize"] = (10,10)
-            # plt.xticks(fontsize=20)
-            # plt.yticks(fontsize=20)
-            plt.show()
-            
-       
-        return diag_error
+        # TODO: to be finished...
+        
+        self.hamiltonian = self.hamiltonian.astype(np.float64)
+        
+        E, V = eigsh(self.hamiltonian, k=knum, which='LM')
+        test = V.conj().T@ self.hamiltonian @ V
+        print("before sort: error for orthonormal: %f" % check_diag(V.conj().T @ V))
+        print("before sort: error for H: %f" % check_diag(test))
     
     
-    
-    
-    
-    def sort_P(self,knum):
+    def sort_P(self,knum, is_quiet = 1):
         """
-        For Hermitian case.
+        For Hermitian case. After finding eigensystems of hamiltonian, we silmultaneously
+        diagonalize h and P(translational operator). 
 
         Parameters
         ----------
-        knum : TYPE
+        knum : int
             DESCRIPTION.
 
         Returns
@@ -325,46 +340,10 @@ class Spin_hamiltonian:
         
         self.hamiltonian = self.hamiltonian.astype(np.float64)
         
-        E, V = eigsh(self.hamiltonian, k=knum, which='LM')
-        test = V.conj().T@ self.hamiltonian @ V
-        print("before sort: error for orthonormal: %f" % self.check_diag(V.conj().T @ V))
-        print("before sort: error for H: %f" % self.check_diag(test))
+        E, V = eigsh(self.hamiltonian, k=knum, which='SA')
         
-        V_sort = V+np.zeros(V.shape,dtype=complex)
-        # Need to specify V_sort is complex. Otherwise it will take real part 
-        # of V_sort[:,reg]=regV@Vtrans
-        labels=[]
-        for i in range(len(E)-1):
-            if E[i+1]-E[i]>0.0000001:
-                labels.append(i)
-                
-        for i in range(len(labels)-1):
-            if labels[i+1]-labels[i]>1:
-                reg = range(labels[i]+1,labels[i+1]+1)
-                regV = V[:,reg]
-                Peig = regV.conj().T@ self.P @regV
-                # Peig is not necessarily hermitian! So we use eig instead of eigh
-                # TODO: Vtrans is not guaranteed to be orthonormal...
-                S,Vtrans=alg.eig(Peig)
-                
-                # The following two lines check the orthogonality
-                vtest = regV@Vtrans
-                # print(alg.norm(vtest,axis=0))
-                test = Vtrans.conj().T @ Vtrans 
-                # TODO: Stest is not integer...
-                Stest = np.angle(S)*self.N/(2*pi)
-                # print(test)
-                # print()
-                
-                V_sort[:,reg]=regV@Vtrans
-                
-    
-        eig_P = V_sort.conj().T @ self.P @ V_sort
-        S = np.angle(eig_P.diagonal())*self.N/(2*pi)
-        
-        print("error for orthonormal: %f" % self.check_diag(V_sort.conj().T @ V_sort))
-        print("error for H: %f" % self.check_diag(V_sort.conj().T@ self.hamiltonian @V_sort))
-        print("error for P: %f" % self.check_diag(eig_P))
+        eig_M, V_sort = simult_diag(self.hamiltonian, E, V, 
+                                    self.P, is_phase = 1, is_quiet = 0)
         
         self.eigval = E
         self.R = V_sort
@@ -372,9 +351,9 @@ class Spin_hamiltonian:
         # Even here, L and R are the same; we use the same notation so the code 
         # is compatible with the non-hermitian case.
         
-        self.S = S
+        self.S = eig_M
         
-        return E, V_sort, S
+        return E, V_sort, eig_M
     
     
     
@@ -410,11 +389,11 @@ class Spin_hamiltonian:
         P_eig = L.conj().T @ P @ R
         S = np.angle(P_eig.diagonal())*self.N/(2*pi)
         print("error for orthonormal: %f" % 
-          self.check_diag(L.conj().T @ R))
+          check_diag(L.conj().T @ R))
         print("error for H: %f" % 
-          self.check_diag(L.conj().T @ self.hamiltonian @ R))
+          check_diag(L.conj().T @ self.hamiltonian @ R))
         print("error for P: %f" % 
-          self.check_diag(P_eig))
+          check_diag(P_eig))
                    
         
         self.R, self.L, self.S = R, L, S
@@ -488,6 +467,22 @@ class Spin_hamiltonian:
         self.combine, self.combine_simp = combine, combine_simp
         
         return c, Delta, combine
+    
+    
+    def fold_S(self):
+        """
+        Fold the "Brillouin zone" for antiferromagetic case. 
+
+        Returns
+        -------
+        S : numpy.array
+
+        """        
+        S = fold_brillouin(self.S, self.N)
+ 
+        self.S = S
+        
+        return S
         
     
 #----------------------------------------------------------------------------#
@@ -634,7 +629,9 @@ def get_Virasoro(hamiltonian,N, couple_off,couple_diag, n_total,a):
 
 #----------------------------------------------------------------------------#
 def get_Sz(N, flag=0):
-    """ Generate S_z matrix (this is actually the parity!) """
+    """ Generate S_z matrix (this is actually the parity!) 
+    S^z_1 \oprod S^z_2 \cdots S^z_N
+    """
       
     x_array_Sz = range(0,2**(N),1)
     y_array_Sz = x_array_Sz
@@ -648,6 +645,52 @@ def get_Sz(N, flag=0):
         S_z = val_array_Sz
   
     return S_z
+
+
+
+def check_totalSz(model, level):
+    """ 
+    Example input: 
+        check_totalSz(XXZ,[1,2])
+    """
+    
+    if isinstance(level, int): level = [level]
+    
+    vec = model.R[:, level]
+    total_Sz = get_total_Sz(model.N)
+    
+    eig_Sz = vec.conj().T @ total_Sz @ vec
+    if len(level)>1:
+        eig_Sz = (alg.eig(eig_Sz))[0]
+    
+    return eig_Sz
+
+
+
+def get_total_Sz(N, flag=0):
+    """ 
+    Generate S^z_1+S^z_2+\cdots + S^z_N    
+    """
+      
+    x_array_Sz = range(0,2**(N),1)
+    y_array_Sz = x_array_Sz
+    val_array_Sz = np.array([1,-1])
+    for i in range(N-1): 
+        val_array_Sz = np.repeat(val_array_Sz, 2)
+        add_new = np.tile(np.array([1,-1]), 2**(i+1))
+        
+        val_array_Sz = val_array_Sz + add_new
+        
+    if flag==0:    
+        S_z = csr_matrix((val_array_Sz, (x_array_Sz, y_array_Sz)), shape=(2**N, 2**N))
+    else:
+        S_z = val_array_Sz
+  
+    # convention: S_z = sigma_z/2
+    S_z = S_z/2  
+  
+    return S_z
+
 #----------------------------------------------------------------------------#
 def my_imagesc(matr):
    

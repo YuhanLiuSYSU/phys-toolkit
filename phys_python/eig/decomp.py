@@ -7,6 +7,8 @@ Created on Mon Nov  1 12:48:23 2021
 """
 import numpy as np
 import scipy.linalg as alg
+from math import pi
+from scipy.sparse import issparse
 
 from toolkit.check import check_zero, check_symmetric, \
     check_diag, check_identity
@@ -205,8 +207,112 @@ def __Takagifac(R):
 
 
 
+def simult_diag(H, E, V, M, is_quiet = 1, is_quiet_debug = 1, is_phase = 0):
+    
+    N_eig = len(E)
+    
+    if issparse(H)==1:
+        N_dimH = H.get_shape()[0]
+        N_chain = int(np.log2(N_dimH))
+    else:
+        N_chain = N_eig
+    
+    test = V.conj().T@ H @ V
+    if is_quiet == 0:
+        print(" [simult_diag] before sort: error for orthonormal: %f" 
+              % check_diag(V.conj().T @ V))
+        print(" [simult_diag] before sort: error for H: %f" 
+              % check_diag(test))
+    
+    V_sort = V+np.zeros(V.shape,dtype=complex)
+    # Need to specify V_sort is complex. Otherwise it will take real part 
+    # of V_sort[:,reg]=regV@Vtrans
+    labels=[-1]
+    for i in range(len(E)-1):
+        if E[i+1]-E[i]>0.0000001:
+            labels.append(i)
+            
+    if labels[-1] != N_eig-1: labels.append(N_eig-1)
+            
+    for i in range(len(labels)-1):
+        if labels[i+1]-labels[i]>1:
+            reg = range(labels[i]+1,labels[i+1]+1)
+            regV = V[:,reg]
+            Meig = regV.conj().T@ M @regV
+            
+            # Meig is not necessarily hermitian! So we use eig instead of eigh
+            # TODO: Vtrans is not guaranteed to be orthonormal...
+            #       This is because of the degeneracy in S. 
+            # Comment:  even that Peig is not hermitian, if there is no degeneracy
+            #           in S, then Vtrans is forced to be orthogonal. This 
+            #           is because eigenvectors with different eigenvalues
+            #           cannot mix.
+            S,Vtrans=alg.eig(Meig)
+            
+            if is_quiet_debug == 0: 
+                # The following lines check the orthogonality
+                vtest = regV@Vtrans
+                # print(alg.norm(vtest,axis=0))
+                test = Vtrans.conj().T @ Vtrans 
+                print("error for orthonormal: %f" % check_diag(test))
+                print("error for H: %f" % 
+                      check_diag(vtest.conj().T@ H @ vtest))
+                print("error for P: %f" % check_diag(
+                    vtest.conj().T@ M @ vtest))
+            
+            
+            V_sort[:,reg]=regV@Vtrans
+            
 
-def decomp_schur_(K):
+    eig_M = V_sort.conj().T @ M @ V_sort
+    # S = np.angle(eig_P.diagonal())*self.N/(2*pi)
+    
+    if is_quiet == 0:
+        print(" [simult_diag] error for orthonormal: %f" 
+              % check_diag(V_sort.conj().T @ V_sort))
+        print(" [simult_diag] error for H: %f" 
+              % check_diag(V_sort.conj().T@ H @V_sort))
+        print(" [simult_diag] error for P: %f" 
+              % check_diag(eig_M))
+    
+    
+    if is_phase == 1:
+        # should be integers
+        eig_M = np.angle(np.diag(eig_M))*N_chain/(2*pi)
+        
+        left = -N_chain/2 - 10**(-4)
+        right = N_chain/2 + 10**(-4)
+    
+        loc_l_out = np.where(eig_M<left)[0]
+        eig_M[loc_l_out] = eig_M[loc_l_out] + N_chain
+        loc_r_out = np.where(eig_M>right)[0]
+        eig_M[loc_r_out] = eig_M[loc_r_out] - N_chain
+            
+    return eig_M, V_sort
+
+
+
+def fold_brillouin(S, N):
+    """
+    Fold the "Brillouin zone" for antiferromagetic case. 
+
+    Returns
+    -------
+    S : numpy.array
+
+    """
+    
+    N_half = N/2
+    N_quad = N/4
+    
+    for i, s in enumerate(S):
+        if s>N_quad: S[i] = s-N_half
+        elif s<-N_quad: S[i] = s+N_half
+    
+    return S
+
+
+def decomp_schur_(K, is_pure_imag = 0):
     """
     Schur decomposition for real anti-symmetric matrix.
     ---------------------------------------------------------------
@@ -217,9 +323,16 @@ def decomp_schur_(K):
               where lamda is non-negative.
               3. Lambda = [lambda_1,lambda_1,lambda_2,lambda_2,...]
               
+    If is_pure_imag == 1, the output T is [0, iLambda; -iLambda, 0],
+    output Lambda is iLambda.
+    ------------------
+    return Q, T, Lambda
+              
     """
+    if is_pure_imag == 1: K = K*(-1j)
     
-    isReal = K.real.sum();
+    
+    isReal = abs(K.imag).sum()
     if isReal > 10**(-6):
         print(isReal)
         print(" --! [decomp_schur_] The K-matrix is not REAL!")
@@ -258,6 +371,10 @@ def decomp_schur_(K):
     
     # such that K = Q.'*T*Q
     Q = Q.T;
+    
+    if is_pure_imag == 1: 
+        T = T*1j
+        Lambda = Lambda*1j
     
     return Q, T, Lambda
 

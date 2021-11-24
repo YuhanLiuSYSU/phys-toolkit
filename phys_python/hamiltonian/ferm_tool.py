@@ -1,10 +1,110 @@
 import numpy as np
 import cmath
 from math import pi
+import itertools
+
+from eig.decomp import sort_ortho, simult_diag, fold_brillouin
+
+Sy = np.array(([0, -1j], [1j, 0]), dtype=np.complex128)
+I2 = np.array(([1, 0], [0, 1]), dtype=np.complex128)
 
 
+class Ferm_Hamiltonian:
+    """
+    Input is fermionic Hamiltonian matrix
+    """
+    
+    def __init__(self, H):
+        self.H = H
+        self.N = len(H)
+        
+        
+    def single_eig(self):
+        [eigval, eigvec] = sort_ortho(self.H)
+
+        return eigval, eigvec       
+    
+    
+    def many_eig(self, cutoff = 20, P = "+", is_fold = 0):
+        
+        N = self.N
+        
+        s_eig, eigvec = self.single_eig()
+        trans_op = self.trans_op(P = P)
+        trans_eig, eigvec = simult_diag(self.H, s_eig, eigvec, 
+                                        trans_op, is_phase = 1)    
+        
+        gs_energy = s_eig[0:int(N/2)].sum()
+        gs_parity = 1-2*(int(N/2) % 2)
+        
+        s_idx = np.argsort(abs(s_eig))
+        gs_idx = np.where(s_idx<int(N/2))[0]
+        gs_list = np.zeros(N)
+        gs_list[gs_idx.tolist()] = 1
+        
+        exs_eig = abs(s_eig[s_idx])
+        eigvec = eigvec[:, s_idx]
+        trans_eig = trans_eig[s_idx]
+        
+        n_cut = int(np.log2(cutoff))
+        lst = np.array(list(itertools.product([0, 1], repeat=n_cut)))
+            
+        lst_parity = 1-lst*2
+        lst_parity = lst_parity.prod(axis = 1)*gs_parity
+        
+        m_eig = exs_eig[0: n_cut] @ lst.T + gs_energy
+               
+        m_idx = np.argsort(m_eig)
+        m_eig = m_eig[m_idx]
+        lst_parity = lst_parity[m_idx]
+        lst = lst[m_idx]
+        lst = np.hstack((lst, np.zeros((2**n_cut, N - n_cut))))
+        lst = (lst+gs_list) % 2
+        ferm_nb = lst.sum(axis = 1) - int(N/2)
+        trans_meig = lst @ trans_eig
+        
+        left = -N/2 - 10**(-4)
+        right = N/2 + 10**(-4)
+    
+        loc_l_out = np.where(trans_meig<left)[0]
+        trans_meig[loc_l_out] = trans_meig[loc_l_out] + N
+        loc_r_out = np.where(trans_meig>right)[0]
+        trans_meig[loc_r_out] = trans_meig[loc_r_out] - N
+        
+        if is_fold == 1:
+            trans_meig = fold_brillouin(trans_meig, N)
+        
+        combine = np.vstack((m_eig, lst_parity, ferm_nb, trans_meig)).T
+        
+        
+        self.s_eig = s_eig[s_idx]
+        self.eigvec = eigvec
+        self.combine = combine
+        
+        return s_eig[s_idx], combine, lst, eigvec
+    
+
+    
+    
+    def trans_op(self, P = "+"):
+        
+        N = self.N
+        trans_op = np.diag(np.tile(1, N-1), k = 1)
+        
+        if P == "+":
+            trans_op[N-1,0] = 1
+        else:
+            trans_op[N-1,0] = -1
+        
+        return trans_op
+    
+    
+    
+        
+    
+        
 class FermHamiltonian:
-    """Class for the spin Hamiltonian"""
+    """Class for the fermionic Hamiltonian"""
     
     def __init__(self, N, u, v,w, offset,bands):
         self.N = N
@@ -38,7 +138,7 @@ class FermHamiltonian:
             self.eig.append(np.sqrt(abs(abs(w*np.exp(-1j*k)+v)**2-u**2)))
                           
             if abs(w*np.exp(-1j*k)+v) >= u:
-                r_minus, l_minus, r_plus, l_plus = find_v(k, u, v, w)
+                r_minus, l_minus, r_plus, l_plus = find_v_ssh(k, u, v, w)
                 self.R_plus.append(r_plus)
                 self.R_minus.append(r_minus)
                 self.L_plus.append(l_plus)
@@ -91,7 +191,23 @@ class FermHamiltonian:
 
 
 #---------------------------------------------------------------------------#
-def find_v(k, u, v, w):
+def get_gamma(eigvec, m_fill):
+    """
+    m_fill is the filled bands
+    
+    return the covariance matrix Gamma
+    """
+    
+    N = len(m_fill)
+    Corr = eigvec @ m_fill @ eigvec.conj().T
+
+    Gamma = np.kron(Corr-Corr.transpose(),I2)\
+        +np.kron(np.eye(N)-Corr-Corr.transpose(),Sy)
+    
+    return Gamma
+
+
+def find_v_ssh(k, u, v, w):
     vk = w*np.exp(-1j*k)+v
     avk = abs(vk)
     e_phi = cmath.sqrt(cmath.sqrt((u+avk)/(u-avk)))
@@ -142,3 +258,4 @@ def hn_element(Ferm, k1,k2,s1,s2,n):
     comp = N/(2*pi)*(1j*Ferm.u*(L[0].conj()*R[0]-L[1].conj()*R[1])+Ferm.v*(L[0].conj()*R[1]+L[1].conj()*R[0])+Ferm.w*(L[0].conj()*R[1]*np.exp(1j*(-k1_adj+n*pi/N))+L[1].conj()*R[0]*np.exp(1j*(k1_adj-n*pi/N))))
     
     return comp
+

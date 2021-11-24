@@ -44,22 +44,27 @@ def plot_style_s(x_data, y_datas,
                  sequence = 1):
     """
     
-
     Parameters
     ----------
     x_data : TYPE
         DESCRIPTION.
     y_data : TYPE
         DESCRIPTION.
-    N : TYPE, optional
-        DESCRIPTION. The default is 0.
-    fit_type : int, -1, 0, 1, 2, -10
-        DESCRIPTION. The default is -10, which is not to fit
-        If fit_type == 1, we use the usr_func
-    usr_func : TYPE, optional
-        DESCRIPTION. The default is 0.
+    N : int, optional
+        Total length of the chain. The default is 0.
+        
+    fit_type : int, 0, 1, 2, 3, -10
+        The default is -10, which is not to fit
+        0: linear function
+        1: EE
+        2: MI
+        3: LN
+        else: user defined function "usr_func"
+              
+    usr_func : lambda function, optional
+        User-defined fit function. The default is 0.
 
-    sequence:
+    sequence: float
         Takes value from 0 to 1.
 
     Returns
