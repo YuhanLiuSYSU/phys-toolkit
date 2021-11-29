@@ -3,55 +3,160 @@ import cmath
 from math import pi
 import itertools
 
-from eig.decomp import sort_ortho, simult_diag, fold_brillouin
+
+from eig.decomp import sort_ortho, simult_diag, fold_brillouin, move_brillouin
+from toolkit.check import check_diag
 
 Sy = np.array(([0, -1j], [1j, 0]), dtype=np.complex128)
 I2 = np.array(([1, 0], [0, 1]), dtype=np.complex128)
 
 
-class Ferm_Hamiltonian:
+class Ferm_hamiltonian:
     """
     Input is fermionic Hamiltonian matrix
     """
     
-    def __init__(self, H):
-        self.H = H
-        self.N = len(H)
+    def __init__(self, H = None, N = None, P = "+", 
+                 bands = 1, w= None,v=None,u=None, is_herm = True):
         
+        self.H = H
+        if isinstance(H,np.ndarray):
+            self.N = len(H)
+        elif bool(N):
+            self.N = N
+            
+        self.N_k = int(self.N/bands)
+        self.P = P      # boundary condition. PBC or APBC
+        self.k_tot = np.arange(self.N_k)*2*pi/self.N_k
+        if P == "-":
+            self.k_tot = self.k_tot + pi/self.N_k
+            
+        self.bands = bands
+        self.is_herm = is_herm
+        
+        self.w = w
+        self.v = v
+        self.u = u
         
     def single_eig(self):
         [eigval, eigvec] = sort_ortho(self.H)
 
-        return eigval, eigvec       
+        return eigval, eigvec      
+    
+    def get_LR_ssh(self):
+        s_eig = []
+        P_eig = []
+        self.R_plus = []
+        self.R_minus = []
+        self.L_plus = []
+        self.L_minus = []
+        r_eigvec = np.zeros((self.N, self.N),dtype=np.complex128)
+        l_eigvec = np.zeros((self.N, self.N),dtype=np.complex128)
+        
+        w = self.w
+        v = self.v
+        u = self.u
+        
+        # Generate single body spectrum
+        # corr = np.zeros((self.bands*max(sub_N), self.bands*max(sub_N)),dtype=np.complex128)
+        for i,k in enumerate(self.k_tot):
+            # Only include the positive part of the energy
+            s0_eig = np.sqrt(abs(abs(w*np.exp(-1j*k)+v)**2-u**2))
+            
+            s_eig.append(-s0_eig)
+            s_eig.append(s0_eig)
+            P_eig.append(k*self.N_k/(2*pi))
+            P_eig.append(k*self.N_k/(2*pi))
+            
+            
+            # Note that we include one state at zero energy!!
+            if abs(w*np.exp(-1j*k)+v) >= u:
+                
+                # After diagonalizing P, l is not necessary conjugate of r
+                r_minus, l_minus, r_plus, l_plus = find_v_ssh(k, u, v, w)
+                self.R_plus.append(r_plus)
+                self.R_minus.append(r_minus)
+                self.L_plus.append(l_plus)
+                self.L_minus.append(l_minus)
+                 
+                prod = np.exp(1j*k*np.array([range(1,self.N_k+1)])).T
+                
+                vr_minus = (np.kron(prod, r_minus))[:,0]
+                vr_plus = (np.kron(prod, r_plus))[:,0]
+                                
+                r_eigvec[:,2*i] = vr_minus/np.sqrt(self.N_k)
+                r_eigvec[:,2*i+1] = vr_plus/np.sqrt(self.N_k)
+                
+                if self.is_herm == False:
+                    vl_minus = (np.kron(prod, l_minus))[:,0]
+                    vl_plus = (np.kron(prod, l_plus))[:,0]
+                                    
+                    l_eigvec[:,2*i] = vl_minus/np.sqrt(self.N_k)
+                    l_eigvec[:,2*i+1] = vl_plus/np.sqrt(self.N_k)
+                
+                
+        s_eig = np.array(s_eig)
+        P_eig = np.array(P_eig)
+        
+        P_eig = move_brillouin(P_eig, self.N_k)
+        
+        if self.is_herm:
+            print(" [get_LR_ssh] error for orthonormal: %f" % 
+                  check_diag(r_eigvec.conj().T @ r_eigvec, 0))
+            l_eigvec = r_eigvec
+        else:
+            print(" [get_LR_ssh] error for biorthonormal: %f" % 
+                  check_diag(l_eigvec.conj().T @ r_eigvec, 0))
+
+        
+        return s_eig.real, r_eigvec, l_eigvec, P_eig
     
     
-    def many_eig(self, cutoff = 20, P = "+", is_fold = 0):
+    def many_eig(self, cutoff = 20, is_fold = 0):
         
         N = self.N
         
-        s_eig, eigvec = self.single_eig()
-        trans_op = self.trans_op(P = P)
-        trans_eig, eigvec = simult_diag(self.H, s_eig, eigvec, 
-                                        trans_op, is_phase = 1)    
+        # Comment: For the following code, there exists unresolved degeneracy. 
+        # The result for RE-MI is not accurate. lst[0] and lst[1] gives different result
+        if isinstance(self.H,np.ndarray):
+        #-----------------------------------------------------
+            trans_op = self.trans_op(bands = self.bands)
+            s_eig, r_eigvec, P_eig = simult_diag(self.H, trans_op, is_phase = 1,
+                                                bands = self.bands, is_zero_sym=1)
+        #-----------------------------------------------------
+        else:
+        # Comment: the result for RE-MI is accurate, same for lst[0], lst[1], 
+        # lst[2], lst[3]
+        #-----------------------------------------------------
+            s_eig, r_eigvec, l_eigvec, P_eig = self.get_LR_ssh()
+        #-----------------------------------------------------  
+
         
-        gs_energy = s_eig[0:int(N/2)].sum()
+        
+        gs_energy = -abs(s_eig).sum()/2
         gs_parity = 1-2*(int(N/2) % 2)
         
+        # Sort single body eigenstates according to abs value
+        # While keep track of the GS location.
         s_idx = np.argsort(abs(s_eig))
-        gs_idx = np.where(s_idx<int(N/2))[0]
+        s_eig = s_eig[s_idx]
+        P_eig = P_eig[s_idx]
+        r_eigvec = r_eigvec[:, s_idx]
+        if 'l_eigvec' in locals():
+            l_eigvec = l_eigvec[:, s_idx]
+              
+        gs_idx = np.where(s_eig<0)[0]       
         gs_list = np.zeros(N)
         gs_list[gs_idx.tolist()] = 1
-        
-        exs_eig = abs(s_eig[s_idx])
-        eigvec = eigvec[:, s_idx]
-        trans_eig = trans_eig[s_idx]
-        
+              
+        # Many body eigenstates
         n_cut = int(np.log2(cutoff))
         lst = np.array(list(itertools.product([0, 1], repeat=n_cut)))
             
         lst_parity = 1-lst*2
         lst_parity = lst_parity.prod(axis = 1)*gs_parity
         
+        exs_eig = abs(s_eig)
         m_eig = exs_eig[0: n_cut] @ lst.T + gs_energy
                
         m_idx = np.argsort(m_eig)
@@ -61,158 +166,92 @@ class Ferm_Hamiltonian:
         lst = np.hstack((lst, np.zeros((2**n_cut, N - n_cut))))
         lst = (lst+gs_list) % 2
         ferm_nb = lst.sum(axis = 1) - int(N/2)
-        trans_meig = lst @ trans_eig
+        P_meig = lst @ P_eig
         
-        left = -N/2 - 10**(-4)
-        right = N/2 + 10**(-4)
-    
-        loc_l_out = np.where(trans_meig<left)[0]
-        trans_meig[loc_l_out] = trans_meig[loc_l_out] + N
-        loc_r_out = np.where(trans_meig>right)[0]
-        trans_meig[loc_r_out] = trans_meig[loc_r_out] - N
+        # Move to "first Brillouin zone"
+        N_brillouin = N/self.bands
+        P_meig = move_brillouin(P_meig, N_brillouin)
         
+        # Fold Brillouin zone
         if is_fold == 1:
-            trans_meig = fold_brillouin(trans_meig, N)
+            P_meig = fold_brillouin(P_meig, N)
         
-        combine = np.vstack((m_eig, lst_parity, ferm_nb, trans_meig)).T
-        
-        
-        self.s_eig = s_eig[s_idx]
-        self.eigvec = eigvec
+        combine = np.vstack((m_eig, lst_parity, ferm_nb, P_meig)).T
+              
+        self.s_eig = s_eig
+        self.P_eig = P_eig
+        self.r_eigvec = r_eigvec
+        if 'l_eigvec' in locals():
+            self.l_eigvec = l_eigvec
         self.combine = combine
+        self.lst = lst
         
-        return s_eig[s_idx], combine, lst, eigvec
+        return s_eig, r_eigvec, combine, lst
     
+    
+    def get_gamma(self,m_fill):
+        """
+        m_fill is the filled bands, for example, lst[0]
+        
+        return the covariance matrix Gamma
+        """
+        r_eigvec = self.r_eigvec
+        l_eigvec = self.l_eigvec
+        
+        N = len(m_fill)
+        
+        if len(m_fill.shape) == 1:
+            m_fill = np.diag(m_fill)
+        
+        Corr = r_eigvec @ m_fill @ l_eigvec.conj().T
 
+        Gamma = np.kron(Corr-Corr.transpose(),I2)\
+            +np.kron(np.eye(N)-Corr-Corr.transpose(),Sy)
+        
+        return Corr, Gamma
     
     
-    def trans_op(self, P = "+"):
+    def trans_op(self, bands = 1):
+        # TODO: think about APBC when bands == 2
         
         N = self.N
         trans_op = np.diag(np.tile(1, N-1), k = 1)
-        
-        if P == "+":
+      
+        if self.P == "+":
             trans_op[N-1,0] = 1
         else:
             trans_op[N-1,0] = -1
+            
+        if bands > 1:
+            trans_op = np.linalg.matrix_power(trans_op,bands)
         
         return trans_op
     
-    
-    
-        
-    
-        
-class FermHamiltonian:
-    """Class for the fermionic Hamiltonian"""
-    
-    def __init__(self, N, u, v,w, offset,bands):
-        self.N = N
-        self.u = u
-        self.v= v
-        self.w = w
-        self.offset = offset
-        self.bands = bands
-        
-#        if PBC==1:
-#            shift = 0
-#            self.select = 4
-#        elif PBC==-1:
-#            shift = pi/N
-#            self.select = 5
-        
-        self.k_tot = np.arange(N)*2*pi/N + self.offset
-        
-    def get_LR(self,sub_N):
-        self.eig = []
-        self.R_plus = []
-        self.R_minus = []
-        self.L_plus = []
-        self.L_minus = []
-        u,v,w = self.u, self.v, self.w
-        
-        # Generate single body spectrum
-        corr = np.zeros((self.bands*max(sub_N), self.bands*max(sub_N)),dtype=np.complex128)
-        for k in self.k_tot:
-            # Only include the positive part of the energy
-            self.eig.append(np.sqrt(abs(abs(w*np.exp(-1j*k)+v)**2-u**2)))
-                          
-            if abs(w*np.exp(-1j*k)+v) >= u:
-                r_minus, l_minus, r_plus, l_plus = find_v_ssh(k, u, v, w)
-                self.R_plus.append(r_plus)
-                self.R_minus.append(r_minus)
-                self.L_plus.append(l_plus)
-                self.L_minus.append(l_minus)
-                
-                W = l_minus @ r_minus.conj().T
-                prod = np.exp(1j*k*np.array([range(1,max(sub_N)+1)]))
-                corr += np.kron(prod.conj().T @ prod, W)/self.N
-                
-        # plt.figure(0)
-        # plt.plot(k_tot, eig,color='blue')
-        # plt.xlabel('$k$',fontsize=20)
-        # plt.ylabel('$E$',fontsize=20)
-        # plt.xticks(fontsize=20)
-        # plt.yticks(fontsize=20)
-        # plt.grid(True)
-                
-        return corr
-    
-    def many_body(self, cut_off_save):
-        # How to optimize the code?
-        
-        N = self.N
-        eig_sub = np.hstack((self.eig[0:N],self.eig[0:N]))
-        k_disp = np.hstack((self.k_tot-pi,-(self.k_tot-pi)))
-        #    k_disp = np.hstack((k_tot,-(k_tot)))
-        m_eig = np.zeros(2**(len(eig_sub)))
-        k_eig = np.zeros(2**(len(eig_sub)))
-        m_eig[0:2], k_eig[0:2] = [eig_sub[0],0], [k_disp[0],0]
-        
-        
-        for i in range(len(eig_sub)-1):
-            m_eig[2**(i+1):2**(i+2)] = m_eig[0:2**(i+1)]+eig_sub[i+1]
-            k_eig[2**(i+1):2**(i+2)] = k_eig[0:2**(i+1)]+k_disp[i+1]
-            
-            
-        idx = m_eig.argsort()[::1]   
-        m_eig = m_eig[idx]
-        a = m_eig[self.select]-m_eig[0]
-        m_eig = m_eig/a
-        k_eig = (k_eig[idx])*N/(2*pi)
-        
-        k_eig_mod = (k_eig % (2*N)) - (2*N)*((k_eig % (2*N)) // N)
-        self.combine = (np.vstack((m_eig[0:cut_off_save],k_eig[0:cut_off_save]))).T
-        self.a = a
-               
-        return m_eig[0:cut_off_save], k_eig[0:cut_off_save]
-        
-    
 
+    def select_state(self):
+        combine = self.combine
+        if self.P == "+":
+            loc = np.where(combine[:,1]==-1)[0]
+        else:
+            loc = np.where(combine[:,1]==1)[0]
+        combine = combine[loc]
+        
+        return combine
+    
 
 #---------------------------------------------------------------------------#
-def get_gamma(eigvec, m_fill):
-    """
-    m_fill is the filled bands
-    
-    return the covariance matrix Gamma
-    """
-    
-    N = len(m_fill)
-    Corr = eigvec @ m_fill @ eigvec.conj().T
-
-    Gamma = np.kron(Corr-Corr.transpose(),I2)\
-        +np.kron(np.eye(N)-Corr-Corr.transpose(),Sy)
-    
-    return Gamma
 
 
 def find_v_ssh(k, u, v, w):
     vk = w*np.exp(-1j*k)+v
+    # print(vk)
     avk = abs(vk)
+    # print(avk)
     e_phi = cmath.sqrt(cmath.sqrt((u+avk)/(u-avk)))
     c_phi = (e_phi+1/e_phi)/2
     s_phi = (e_phi-1/e_phi)/(2*1j)
+    # print(c_phi)
+    # print(s_phi)
     
     vr_minus = np.array([[-vk/avk*s_phi],[c_phi]])
     vl_minus = np.array([[-vk/avk*s_phi.conjugate()],[c_phi.conjugate()]])
@@ -222,6 +261,21 @@ def find_v_ssh(k, u, v, w):
     
     return vr_minus, vl_minus, vr_plus, vl_plus
 
+
+def H_ssh(N, w, v, u, PBC = "+"):
+    # Compare the energy spectrum
+    
+    H0 = np.diag(np.tile(np.array([1j*u,-1j*u]), N))
+    H = np.diag(np.hstack((np.tile(np.array([v,w]), N-1),np.array([v]))),k=1)
+    if PBC == "+":
+        # start from here      
+        H[2*N-1, 0] = w
+    else:
+        H[2*N-1, 0] = -w
+        
+    H = H + H.transpose()+H0
+    
+    return H
 
 
 def find_s(combine, val):

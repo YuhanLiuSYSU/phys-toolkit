@@ -224,7 +224,7 @@ class GetEntFerm:
         else:
             
             # L.conj().T @ D @ R - np.diag(gamma) = 0
-            [gamma, R, L] = sort_biortho(D,knum=len(corr), PT = self.PT)
+            [gamma, R, L] = sort_biortho(D, PT = self.PT)
             # gamma_tilde = np.diag(np.array([my_sqrt_(x*(1-x))*np.sign(x.real) for x in gamma]))
 
             x_diag = np.zeros(len(gamma),dtype=np.complex128)

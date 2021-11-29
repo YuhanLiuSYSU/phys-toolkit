@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 
-def check_diag(matr, is_show = 1):
+def check_diag(matr, is_show = 0):
     matr_remove = matr-np.diag(np.diag(matr))
     diag_error = np.sum(abs(matr_remove))
     

@@ -34,8 +34,9 @@ def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
     return fig
 
 
-def plot_style_s(x_data, y_datas, 
-                 x_labels = None, y_labels = None, 
+def plot_style_s(x_datas, y_datas, 
+                 x_labels = None, y_labels = None, title = None, 
+                 x_lim = None, y_lim = None,
                  is_scatter = 1, scatter_size = 10,
                  is_line = 1, line_labels = None,
                  N = 0, fit_type = -10, usr_func = 0, 
@@ -70,6 +71,9 @@ def plot_style_s(x_data, y_datas,
     Returns
     -------
     None.
+    
+    Example input:
+        
 
     """
     
@@ -79,11 +83,25 @@ def plot_style_s(x_data, y_datas,
     else:
         ax = pre_ax
     
-        
+    
+    plt.rc('axes', labelsize = MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('figure', titlesize = BIG_SIZE)     # fontsize of the figure title
+    plt.rc('legend', fontsize = SMALL_SIZE)    
+    
+    
     # Accomadate different input type
     if not isinstance(y_datas, list): y_datas = [y_datas]
+    if not isinstance(x_datas, list): x_datas = [x_datas]
         
     for i, y_data in enumerate(y_datas):
+        
+        if len(x_datas) == 1:
+            x_data = x_datas[0]
+        else:
+            x_data = x_datas[i]
+        
         if is_scatter: 
             if bool(my_color):
                 line = ax.scatter(x_data, y_data, scatter_size, color = my_color)
@@ -100,7 +118,7 @@ def plot_style_s(x_data, y_datas,
         
               
     ax.grid(True)
-    if bool(line_labels): ax.legend()
+    if bool(line_labels): ax.legend(frameon = True)
     
     if is_log == 1:
         ax.set_xscale("log")
@@ -108,14 +126,11 @@ def plot_style_s(x_data, y_datas,
     
     if bool(x_labels): ax.set_xlabel(x_labels)
     if bool(y_labels): ax.set_ylabel(y_labels)
+    if bool(title): ax.set_title(title)
     
-    plt.rc('axes', labelsize = MEDIUM_SIZE)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('figure', titlesize = BIG_SIZE)     # fontsize of the figure title
-    plt.rc('legend', fontsize = SMALL_SIZE)
-    
-    
+    if bool(x_lim): ax.set_xlim(x_lim)
+    if bool(y_lim): ax.set_ylim(y_lim)
+       
     # plt.ylim([0.9*abs(y_data.min())*np.sign(y_data.min()),
     #           1.1*abs(y_data.max())*np.sign(y_data.max())])
     
@@ -203,7 +218,7 @@ def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], is_
                 
             elif (i==0 and j==1):
                 msg = 'tab:blue'
-                fit_type = 3
+                fit_type = 2
                 n = 2 # renyi index
                 
             elif (i==1 and j==0):

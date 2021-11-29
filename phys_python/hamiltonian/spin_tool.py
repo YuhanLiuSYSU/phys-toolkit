@@ -2,11 +2,12 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import scipy.linalg as alg
 from math import pi
-from scipy.sparse.linalg import eigs, eigsh
+from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
 
 from toolkit.check import check_diag
 from eig.decomp import simult_diag, fold_brillouin
+from eig.decomp import simult_diag_new, sort_biortho, simult_diag_nonh
 
 
 Sx = np.array(([0, 1], [1, 0]), dtype=np.complex128)
@@ -218,106 +219,24 @@ class Spin_hamiltonian:
         return self.P
       
         
-    def sort_biortho(self,knum, eig_which='SR', PT='true'):
+    def sort_biortho_spin(self,knum, eig_which='SR', PT='true'):
         
-        eigval, eigvecs = eigs(self.hamiltonian, k=knum, which=eig_which)
-        idx = eigval.argsort()[::1]   
-        eigval = eigval[idx]
-        eigvecs = eigvecs[:,idx]
+        eigval, R, L = sort_biortho(self.hamiltonian, knum = knum, 
+                                    eig_which = eig_which, PT = PT)
         
-        if PT!='true':
-            eigval_L, eigvecs_L = eigs(self.hamiltonian.conj().T, k=knum, which=eig_which)
-            idx = eigval_L.argsort()[::1]   
-            eigval_L = eigval_L[idx]
-            eigvecs_L = eigvecs_L[:,idx]
-        
-        
-        eig_norm = np.diag(1/np.sqrt(np.diag(eigvecs.conj().T@eigvecs)))
-        eigvecs = eigvecs@eig_norm
-        
-        labels=[-1]
-        eigvecs_sort = eigvecs+np.zeros(eigvecs.shape,dtype=complex)
-        for i in range(len(eigval)-1):
-            if abs(eigval[i+1]-eigval[i])>0.0000001:
-                labels.append(i)
-        
-        for i in range(len(labels)-1):
-            if labels[i+1]-labels[i]>1:
-                reg = range(labels[i]+1,labels[i+1]+1)
-                regVR = eigvecs[:,reg] 
-                
-                if np.sum(abs(regVR.T@regVR-np.identity(len(reg))))>0.0000001:
-                    
-                    eig_unnorm = self.__Takagifac(regVR)
-                    eig_fac = np.diag(1/np.sqrt(np.diag(eig_unnorm.T@eig_unnorm)))               
-                    
-                    eig_norm = eig_unnorm@eig_fac
-                    overlap = eig_norm.T @ eig_norm
-                    # tsave = eig_norm[:,:]
-                    
-                    subreg = []
-                    for j in range(len(reg)-1):
-                        # Sort again
-                        if abs(overlap[j,j+1])>0.000001:
-                            subreg.extend([j,j+1])
-                    subreg = list(set(subreg))
-                    if subreg!=[]:
-                        eig_unnorm_2 = self.__Takagifac(eig_norm[:,subreg])
-                        eig_fac_2 = np.diag(1/np.sqrt(np.diag(eig_unnorm_2.T@eig_unnorm_2)))   
-                        eig_norm_22 = eig_unnorm_2@eig_fac_2
-                        eig_norm[:,subreg] = eig_norm_22
-                        
-                        # test4 = test
-                        # test4[:,subreg] = eig_norm_22
-                        # test3 = test4.T @ test4
-                        # plt.imshow(abs(test3), cmap = 'jet')
-                        # plt.colorbar()
-                                              
-                    eigvecs_sort[:,reg] = eig_norm
-                    
-        eig_norm = np.diag(1/np.sqrt(np.diag(eigvecs_sort.T@eigvecs_sort)))
-        eigvecs_sort = eigvecs_sort@eig_norm        
-
-        print("error for orthonormal: %f" % 
-          check_diag(eigvecs_sort.T @ eigvecs_sort))
-        print("error for H: %f" % 
-          check_diag(abs(eigvecs_sort.T@ self.hamiltonian @eigvecs_sort)))
+        # TODO: make the following code work...
+        # eigval, R = simult_diag_nonh(self.hamiltonian, 
+        #                              [self.P, get_total_Sz(self.N), get_Sz(self.N)],
+        #                              knum = knum)
         
         self.eigval = eigval + self.const_term
-        self.R = eigvecs_sort
-        self.L = eigvecs_sort.conj()
+        self.R = R
+        self.L = R.conj()
         
-        return self.eigval, eigvecs_sort
+        return eigval, R
     
-    
-    def __Takagifac(self,R):
-    # Autonne-Takagi factorization
-    # D = UAU^T where A is a complex symmetric matrix, U is a unitary. D is real non-negative matrix
-    
-        A = R.T @ R 
-        _,V = alg.eig(A.conj().T @ A)
-        _,W = alg.eig((V.T @ A @ V).real)
-        U = W.T @ V.T
-        Up = np.diag(np.exp(-1j*np.angle(np.diag(U @ A @ U.T))/2)) @ U    
-        
-        return R@Up.T
 
-        
-    
-    
-    def sort_P_prod(self,knum):
-        
-        # TODO: to be finished...
-        
-        self.hamiltonian = self.hamiltonian.astype(np.float64)
-        
-        E, V = eigsh(self.hamiltonian, k=knum, which='LM')
-        test = V.conj().T@ self.hamiltonian @ V
-        print("before sort: error for orthonormal: %f" % check_diag(V.conj().T @ V))
-        print("before sort: error for H: %f" % check_diag(test))
-    
-    
-    def sort_P(self,knum, is_quiet = 1):
+    def sort_P(self,knum, is_quiet = 1, is_quiet_debug = 1):
         """
         For Hermitian case. After finding eigensystems of hamiltonian, we silmultaneously
         diagonalize h and P(translational operator). 
@@ -343,7 +262,11 @@ class Spin_hamiltonian:
         E, V = eigsh(self.hamiltonian, k=knum, which='SA')
         
         eig_M, V_sort = simult_diag(self.hamiltonian, E, V, 
-                                    self.P, is_phase = 1, is_quiet = 0)
+                                    [self.P], 
+                                    is_phase = 1, is_quiet = is_quiet, 
+                                    is_quiet_debug = is_quiet_debug)
+        # or [self.P, get_total_Sz(self.N)]
+        
         
         self.eigval = E
         self.R = V_sort
@@ -355,6 +278,20 @@ class Spin_hamiltonian:
         
         return E, V_sort, eig_M
     
+    
+    def sort_P_new(self, knum):
+        eigval, eigvec, eig_M = simult_diag_new(
+            self.hamiltonian, [self.P, get_total_Sz(self.N)], knum = knum, is_phase = 1)
+    
+    
+        self.eigval = eigval
+        self.R = eigvec
+        self.L = eigvec
+        
+        self.S = eig_M[0]
+        self.total_Sz = eig_M[1]
+    
+        return eigval, eigvec, eig_M
     
     
     def sort_P_nonh(self,E,V):
@@ -389,11 +326,11 @@ class Spin_hamiltonian:
         P_eig = L.conj().T @ P @ R
         S = np.angle(P_eig.diagonal())*self.N/(2*pi)
         print("error for orthonormal: %f" % 
-          check_diag(L.conj().T @ R))
+          check_diag(L.conj().T @ R, is_show = 1))
         print("error for H: %f" % 
-          check_diag(L.conj().T @ self.hamiltonian @ R))
+          check_diag(L.conj().T @ self.hamiltonian @ R, is_show = 1))
         print("error for P: %f" % 
-          check_diag(P_eig))
+          check_diag(P_eig, is_show = 1))
                    
         
         self.R, self.L, self.S = R, L, S
@@ -417,8 +354,10 @@ class Spin_hamiltonian:
         
         self.Sz_plus = np.vstack((eigval_p,S_p)).T
         self.Sz_minus = np.vstack((eigval_m,S_m)).T
-        self.combine = (np.vstack(((eigval),S,eig_Sz))).T
-        self.combine_simp = (np.vstack(((eigval).real,np.around(S),eig_Sz_round))).T
+        
+        self.combine = (np.vstack((eigval,S,eig_Sz))).T
+        self.combine_simp = (np.vstack((eigval.real,np.around(S).real,
+                                        eig_Sz_round.real))).T
         
         return self.Sz_plus, self.Sz_minus, eig_Sz, eig_Sz_round, S
 
