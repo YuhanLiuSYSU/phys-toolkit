@@ -257,7 +257,7 @@ def simult_diag_nonh(H, M, knum = -1):
 
 
 def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands = 1,
-                is_zero_sym = 0):
+                is_zero_sym = 1):
     
     """
     Simultaneously diagonalize H and M. (or H, M[0], M[1])
@@ -265,6 +265,8 @@ def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands =
     Although Hp is not hermitian, for some reason, the eigvecs are still 
     orthogonal. The error is very small, as long as there is no further
     degeneracy. 
+    
+    TODO: "is_zero_sym" part only works for two zero states
     """
     
     if isinstance(M, np.ndarray): M = [M]
@@ -297,14 +299,24 @@ def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands =
     
     eig_H = eigvecs.conj().T@ H @ eigvecs
     eig_M0 = eigvecs.conj().T@ M[0] @ eigvecs
+    if len(M) == 2:
+        eig_M1 = eigvecs.conj().T@ M[1] @ eigvecs
     
     
     # Resolve the residual degeneracy manually...
     label = []
-    for i in range(len(eig_H)-1):
-        if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERROR_CUTOFF \
-            and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERROR_CUTOFF:
-                label.append(i)
+    if len(M) == 1:
+        for i in range(len(eig_H)-1):
+            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERROR_CUTOFF \
+                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERROR_CUTOFF:
+                    label.append(i)
+    elif len(M) == 2:
+        for i in range(len(eig_H)-1):
+            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERROR_CUTOFF \
+                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERROR_CUTOFF\
+                    and abs(eig_M1[i,i]-eig_M1[i+1,i+1])<ERROR_CUTOFF:
+                    label.append(i)
+        
    
     if bool(label):
         start = []

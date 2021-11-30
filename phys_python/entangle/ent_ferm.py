@@ -111,6 +111,9 @@ class GetEntFerm:
         
         sa = -eta.T @ np.log(abs(eta)) - (1-eta).T @ np.log(abs(1-eta))
         
+        #debug
+        # sa = -eta.T @ np.log(eta) - (1-eta).T @ np.log(1-eta)
+        
         return sa
     
     

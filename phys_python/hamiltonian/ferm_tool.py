@@ -13,7 +13,7 @@ I2 = np.array(([1, 0], [0, 1]), dtype=np.complex128)
 
 class Ferm_hamiltonian:
     """
-    Input is fermionic Hamiltonian matrix
+    Input is fermionic Hamiltonian matrix, or parameters for the matrix
     """
     
     def __init__(self, H = None, N = None, P = "+", 
@@ -62,9 +62,10 @@ class Ferm_hamiltonian:
         for i,k in enumerate(self.k_tot):
             # Only include the positive part of the energy
             s0_eig = np.sqrt(abs(abs(w*np.exp(-1j*k)+v)**2-u**2))
-            
+        
             s_eig.append(-s0_eig)
             s_eig.append(s0_eig)
+            
             P_eig.append(k*self.N_k/(2*pi))
             P_eig.append(k*self.N_k/(2*pi))
             
@@ -183,6 +184,8 @@ class Ferm_hamiltonian:
         self.r_eigvec = r_eigvec
         if 'l_eigvec' in locals():
             self.l_eigvec = l_eigvec
+        else:
+            self.l_eigvec = r_eigvec
         self.combine = combine
         self.lst = lst
         
@@ -252,6 +255,7 @@ def find_v_ssh(k, u, v, w):
     s_phi = (e_phi-1/e_phi)/(2*1j)
     # print(c_phi)
     # print(s_phi)
+    # print()
     
     vr_minus = np.array([[-vk/avk*s_phi],[c_phi]])
     vl_minus = np.array([[-vk/avk*s_phi.conjugate()],[c_phi.conjugate()]])

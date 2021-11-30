@@ -18,6 +18,28 @@ MEDIUM_SIZE = 20
 BIG_SIZE = 22
 
 
+def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
+    x_power = [1/(i**power) for i in x]
+    
+    xline=np.arange(0, max(x_power)*1.1, max(x_power)/50)
+    
+    coef = np.polyfit(x_power, y, 1)
+    fn = np.poly1d(coef) 
+    
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(121)
+    
+    
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.plot(x_power,y,'bo',xline,fn(xline),'--k')
+    
+    plt.show()
+    
+    return fn
+
+
 def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
                       x_lim = None, y_lim = None):
     
@@ -70,10 +92,8 @@ def plot_style_s(x_datas, y_datas,
 
     Returns
     -------
-    None.
+    ax, coeffs
     
-    Example input:
-        
 
     """
     

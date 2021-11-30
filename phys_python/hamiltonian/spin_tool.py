@@ -6,8 +6,8 @@ from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
 
 from toolkit.check import check_diag
-from eig.decomp import simult_diag, fold_brillouin
-from eig.decomp import simult_diag_new, sort_biortho, simult_diag_nonh
+from eig.decomp import simult_diag, fold_brillouin, simult_diag_old, \
+    sort_biortho, simult_diag_nonh
 
 
 Sx = np.array(([0, 1], [1, 0]), dtype=np.complex128)
@@ -261,7 +261,7 @@ class Spin_hamiltonian:
         
         E, V = eigsh(self.hamiltonian, k=knum, which='SA')
         
-        eig_M, V_sort = simult_diag(self.hamiltonian, E, V, 
+        eig_M, V_sort = simult_diag_old(self.hamiltonian, E, V, 
                                     [self.P], 
                                     is_phase = 1, is_quiet = is_quiet, 
                                     is_quiet_debug = is_quiet_debug)
@@ -280,8 +280,9 @@ class Spin_hamiltonian:
     
     
     def sort_P_new(self, knum):
-        eigval, eigvec, eig_M = simult_diag_new(
-            self.hamiltonian, [self.P, get_total_Sz(self.N)], knum = knum, is_phase = 1)
+        eigval, eigvec, eig_M = simult_diag(
+            self.hamiltonian, [self.P, get_total_Sz(self.N)], knum = knum, is_phase = 1,
+            is_show = 1)
     
     
         self.eigval = eigval
@@ -290,6 +291,7 @@ class Spin_hamiltonian:
         
         self.S = eig_M[0]
         self.total_Sz = eig_M[1]
+        self.hp_pair = np.vstack((eigval, eig_M[0].real, eig_M[1].real)).T
     
         return eigval, eigvec, eig_M
     
@@ -382,7 +384,8 @@ class Spin_hamiltonian:
 
     # Use Virasoro generator to compute c... Result is the same.
     #    Use generate.get_Virasoro
-    #    ctest =  2*vI.conj().T@ Ln_total[1] @ Ln_total[0] @ vI  #Ln is already normalized with a
+    #    ctest =  2*vI.conj().T@ Ln_total[1] @ Ln_total[0] @ vI  
+    #    Here Ln is already normalized with a
     
     def get_c_nonunitary(self):
         
@@ -629,6 +632,26 @@ def get_total_Sz(N, flag=0):
     S_z = S_z/2  
   
     return S_z
+
+
+def extract_c_scaling(E0, E1, L, h, state = 0):
+    
+    # For Ising model, the finite size scaling is c\propto 1/L^2
+    
+    N = len(E0)
+    c = np.zeros(N-2, dtype = np.complex128)
+    for i in range(1,N-1):
+        m = E1[i] - E0[i]
+        
+        # xi is almost a constant for different size
+        xi = L[i]*m/(2*pi)*1/h
+        
+        if state == 0:
+            c[i-1] = -6/(pi*xi)*(E0[i+1]+E0[i-1]-2*E0[i])/(1/L[i+1]+1/L[i-1]-2/L[i])
+        else:
+            c[i-1] = -6/(pi*xi)*(E1[i+1]+E1[i-1]-2*E1[i])/(1/L[i+1]+1/L[i-1]-2/L[i])
+        
+    return c
 
 #----------------------------------------------------------------------------#
 def my_imagesc(matr):
