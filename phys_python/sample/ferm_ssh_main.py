@@ -27,7 +27,7 @@ def get_spec(N = 12, is_save = 0):
         
     #-------------------------------------------------------------------------#
     # CHOOSE FROM MODELS:
-    model = 1
+    model = 3
     #-------------------------------------------------------------------------#
     # First critical point
     if model == 1:
@@ -60,11 +60,13 @@ def get_spec(N = 12, is_save = 0):
     
     bands = 2
     
-    Ferm = ferm_tool.FermHamiltonian(N, u, v, w, offset,bands)    
+    Ferm = ferm_tool.Ferm_hamiltonian(N=bands*N, u=u, v=v, w=w, offset=offset,
+                                      bands = bands)    
+    
     result_ent = GenerateEnt(ent_type, NAB, N, renyi = renyi)
 
     # Get the left and right eigenvectors, and the correlation matrix
-    Corr = Ferm.get_LR(NAB)      
+    Corr = Ferm.get_LR_corr(NAB)      
     Gamma = np.kron(Corr-Corr.transpose(),I2)+np.kron(np.eye(2*max(NAB))
                                                       -Corr-Corr.transpose(),Sy)
     

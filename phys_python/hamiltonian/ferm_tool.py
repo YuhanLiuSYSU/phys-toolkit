@@ -17,17 +17,21 @@ class Ferm_hamiltonian:
     """
     
     def __init__(self, H = None, N = None, P = "+", 
-                 bands = 1, w= None,v=None,u=None, is_herm = True):
+                 bands = 1, w= None,v=None,u=None, is_herm = True,offset=0):
+        # TODO: is_depr_bands should be merged!!
         
         self.H = H
         if isinstance(H,np.ndarray):
             self.N = len(H)
+            print(" [Ferm_hamiltonian] using H...")
         elif bool(N):
             self.N = N
-            
+                    
         self.N_k = int(self.N/bands)
+
+        
         self.P = P      # boundary condition. PBC or APBC
-        self.k_tot = np.arange(self.N_k)*2*pi/self.N_k
+        self.k_tot = np.arange(self.N_k)*2*pi/self.N_k+offset
         if P == "-":
             self.k_tot = self.k_tot + pi/self.N_k
             
@@ -37,6 +41,7 @@ class Ferm_hamiltonian:
         self.w = w
         self.v = v
         self.u = u
+        
         
     def single_eig(self):
         [eigval, eigvec] = sort_ortho(self.H)
@@ -132,8 +137,6 @@ class Ferm_hamiltonian:
             s_eig, r_eigvec, l_eigvec, P_eig = self.get_LR_ssh()
         #-----------------------------------------------------  
 
-        
-        
         gs_energy = -abs(s_eig).sum()/2
         gs_parity = 1-2*(int(N/2) % 2)
         
@@ -175,7 +178,7 @@ class Ferm_hamiltonian:
         
         # Fold Brillouin zone
         if is_fold == 1:
-            P_meig = fold_brillouin(P_meig, N)
+            P_meig = fold_brillouin(P_meig, N/self.bands)
         
         combine = np.vstack((m_eig, lst_parity, ferm_nb, P_meig)).T
               
@@ -214,6 +217,36 @@ class Ferm_hamiltonian:
         return Corr, Gamma
     
     
+    def get_LR_corr(self,sub_N):
+            # Temporary purpose. To be merged...
+    
+        self.eig = []
+        self.R_plus = []
+        self.R_minus = []
+        self.L_plus = []
+        self.L_minus = []
+        u,v,w = self.u, self.v, self.w
+        
+        # Generate single body spectrum
+        corr = np.zeros((self.bands*max(sub_N), self.bands*max(sub_N)),dtype=np.complex128)
+        for k in self.k_tot:
+            # Only include the positive part of the energy
+            self.eig.append(np.sqrt(abs(abs(w*np.exp(-1j*k)+v)**2-u**2)))
+                          
+            if abs(w*np.exp(-1j*k)+v) >= u:
+                r_minus, l_minus, r_plus, l_plus = find_v_ssh(k, u, v, w)
+                self.R_plus.append(r_plus)
+                self.R_minus.append(r_minus)
+                self.L_plus.append(l_plus)
+                self.L_minus.append(l_minus)
+                
+                W = l_minus @ r_minus.conj().T
+                prod = np.exp(1j*k*np.array([range(1,max(sub_N)+1)]))
+                corr += np.kron(prod.conj().T @ prod, W)/self.N_k
+                
+        return corr
+    
+    
     def trans_op(self, bands = 1):
         # TODO: think about APBC when bands == 2
         
@@ -240,6 +273,9 @@ class Ferm_hamiltonian:
         combine = combine[loc]
         
         return combine
+    
+    
+ 
     
 
 #---------------------------------------------------------------------------#
