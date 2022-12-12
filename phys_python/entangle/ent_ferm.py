@@ -6,6 +6,8 @@ Created on Fri Oct 22 13:15:56 2021
 import numpy as np
 import scipy.linalg as alg
 import cmath
+from scipy.linalg import eig
+from scipy.linalg import sqrtm
 
 from eig.decomp import sort_biortho, sort_ortho, decomp_schur_
 
@@ -22,7 +24,11 @@ class GetEntFerm:
     
     """
     
-    def __init__(self, GammaR = 0, corr = 0, ent_type = 1, partition = 0, is_non_herm = 0, renyi = 0, PT = 'true'):
+    def __init__(self, GammaR = 0, corr = 0, ent_type = 1, partition = 0, 
+                 is_non_herm = 0, renyi = 0, PT = 'true'):
+      
+        
+
         self.GammaR = GammaR
         self.corr = corr
         self.ent_type = ent_type
@@ -30,39 +36,47 @@ class GetEntFerm:
         self.PT = PT  
         self.renyi = renyi
         
-        self.eig_gamma, _ = alg.eig(GammaR)
-               
+   
+           
         if (partition != 0):
             NA = partition[0]
             NB = partition[1]
             self.NA = NA
             self.NB = NB
             if (len(partition) > 2):
-                d = partition[3]
+                d = partition[2]
                 self.d = d
             else:
                 d = 0
                 self.d = d    
-             
-        if any(y > 1 for y in ent_type):
+                     
             G11 = GammaR[0:NA, 0:NA]
             G12 = GammaR[0:NA, d+NA:d+NA+NB]
             G21 = GammaR[d+NA:d+NA+NB, 0:NA]
-            G22 = GammaR[d+NA:d+NA+NA, d+NA:d+NA+NB]
+            G22 = GammaR[d+NA:d+NA+NB, d+NA:d+NA+NB]
             
             if d > 0:
                 self.GammaR = np.vstack((np.hstack((G11,G12)),
                                          np.hstack((G21,G22))))
             
-            
+        if not isinstance(GammaR, int):
+            self.eig_gamma, _ = alg.eig(self.GammaR)
+
         if isinstance(corr,int):
+            
             self.S = self.get_S_(self.eig_gamma)
         else:
             self.S = self.get_SCorr_(self.corr)
             
-        if self.renyi > 0:
-            fac = 1/(1-self.renyi)
-            self.Renyi = fac*self.get_renyi_(self.renyi, self.eig_gamma)   
+        if isinstance(renyi, int) or isinstance(renyi, float):
+            if self.renyi > 0:
+                fac = 1/(1-self.renyi)
+                self.Renyi = fac*self.get_renyi_(self.renyi, self.eig_gamma)   
+        else: # when we have a list
+            self.Renyi = []
+            for ry in self.renyi:
+                fac = 1/(1-ry)
+                self.Renyi.append(fac*self.get_renyi_(ry, self.eig_gamma) )
                    
         
         if (2 in ent_type):
@@ -71,19 +85,20 @@ class GetEntFerm:
         if (3 in ent_type):
             # when there is corr input...
             if (type(self.corr) != int):
-                self.RE = self.get_RECorr_();    
+                self.RE, self.RE_ry = self.get_RECorr_()
             else:
-                self.RE = self.get_RE_();
+                self.RE, self.RE_ry = self.get_RE_()
                 
             
+  
         if (4 in ent_type):
             
             eig_G11, _ = alg.eig(G11)
             eig_G22, _ = alg.eig(G22)
             
-            self.MI = self.get_MI_(eig_G11, eig_G22)
-
-            
+            self.MI, self.MI_ry, self.SA, self.SB = self.get_MI_(eig_G11, eig_G22)
+            # print()
+                
         
     " von Neumann entropy "
     def get_S_(self,gamma):
@@ -93,7 +108,7 @@ class GetEntFerm:
         eta = eta[(abs(eta-1)>0.000001) & (abs(eta)>0.000001)]
         eta.reshape(len(eta),1)
                 
-        # log is important to make the non-hermitian ssh model second critial 
+        # abs is important to make the non-hermitian ssh model second critial 
         # point correct.
         sa = -eta.T @ np.log(abs(eta)) 
         
@@ -109,10 +124,16 @@ class GetEntFerm:
         eta = eta[(abs(eta-1)>0.000001) & (abs(eta)>0.000001)]
         eta.reshape(len(eta),1)
         
+        
+        #debug----
+        # eta = eta[0:2]
+        #--------
+        
         sa = -eta.T @ np.log(abs(eta)) - (1-eta).T @ np.log(abs(1-eta))
         
-        #debug
+        #debug----
         # sa = -eta.T @ np.log(eta) - (1-eta).T @ np.log(1-eta)
+        #---------
         
         return sa
     
@@ -120,8 +141,8 @@ class GetEntFerm:
     def get_renyi_(self, renyi, gamma):
         " Renyi entropy "
                
-        eta = (gamma+1)/2;
-        cutoff = 10**(-7);
+        eta = (gamma+1)/2
+        cutoff = 10**(-7)
         
         if self.is_non_herm == 0:
             eta = eta[eta > cutoff]
@@ -152,17 +173,17 @@ class GetEntFerm:
         
         # this is for first critical point
         # At this point, eig_gamma is real, while eig_gc is not.
-        # eig_gc = alg.eig(Gc)[0].real
-        # eig_gamma = self.eig_gamma.real
+        eig_gc = alg.eig(Gc)[0].real
+        eig_gamma = self.eig_gamma.real
         
         # this is for second critical point
         # At this point, both eig_gamma and eig_gc are not real.
-        eig_gc = abs(alg.eig(Gc)[0])
-        eig_gamma = self.eig_gamma.real
+        # eig_gc = abs(alg.eig(Gc)[0])
+        # eig_gamma = self.eig_gamma.real
         
         # test
-        eig_gc = (alg.eig(Gc)[0])
-        eig_gamma = self.eig_gamma.real
+        # eig_gc = (alg.eig(Gc)[0])
+        # eig_gamma = self.eig_gamma.real
         
         R1 = self.get_renyi_(0.5, eig_gc)
         R2 = self.get_renyi_(2, eig_gamma)
@@ -170,8 +191,8 @@ class GetEntFerm:
         if self.is_non_herm == 0:
             LN = R1+R2/2
         else:
-            LN = R1-R2/2
-        
+            # LN = R1-R2/2
+            LN = R1+R2/2
     
         return LN
 
@@ -179,6 +200,7 @@ class GetEntFerm:
     
     " Reflected entropy "
     def get_RE_(self):
+        
         
         if self.is_non_herm == 0:
             GammaR = self.GammaR;
@@ -198,15 +220,21 @@ class GetEntFerm:
     
             eig_MTFD,_ = alg.eig(MTFD)
             RE = self.get_S_(eig_MTFD)
+            
+            if self.renyi > 0:
+                fac = 1/(1-self.renyi)
+                RE_ry = fac*self.get_renyi_(self.renyi, eig_MTFD)   
+            else:
+                RE_ry = 0
          
         elif self.is_non_herm == 1:
-            GammaR = self.GammaR;
+            GammaR = self.GammaR
             #[gamma, R, L] = sort_biortho(GammaR,knum=len(GammaR));
             
             #print("nothing")
-            RE = 0;
+            RE = 0
 
-        return RE;
+        return RE, RE_ry
     
     def get_RECorr_(self):
         
@@ -227,12 +255,17 @@ class GetEntFerm:
         else:
             
             # L.conj().T @ D @ R - np.diag(gamma) = 0
-            [gamma, R, L] = sort_biortho(D, PT = self.PT)
+            [gamma, R, L] = sort_biortho(D, PT = self.PT, is_remove_zero=1)
             # gamma_tilde = np.diag(np.array([my_sqrt_(x*(1-x))*np.sign(x.real) for x in gamma]))
 
             x_diag = np.zeros(len(gamma),dtype=np.complex128)
             for ix in range(len(gamma)):
                 x = gamma[ix]
+                
+                # if abs(x) < 10**(-8) or abs(1-x) < 10**(-8):
+                    
+                #     x_diag[ix] = 0
+                
                 if abs(x.imag) < 10**(-8):
                     # When x is real, either positive or negative
                     x_diag[ix] = my_sqrt_(x*(1-x))*np.sign(x.real)
@@ -242,7 +275,8 @@ class GetEntFerm:
                     
             gamma_tilde = np.diag(x_diag)
             
-            dRef = R @ gamma_tilde @ L.conj().T;
+            dRef = R @ gamma_tilde @ L.conj().T
+            
         
             # -----------------------------------------------------------------------------
             # Comment: for the non-Hermitian case, x*(1-x) is negative. 
@@ -258,9 +292,18 @@ class GetEntFerm:
         DRef = np.block([[D[0:NAC,0:NAC], dRef[0:NAC,0:NAC]],
                          [dRef[0:NAC,0:NAC], np.eye(NAC)-D[0:NAC,0:NAC]]]);
 
-        RE = self.get_SCorr_(DRef);
+        RE = self.get_SCorr_(DRef)
+        
+        if self.renyi > 0:
+            fac = 1/(1-self.renyi)
+            eig_MTFD,_ = alg.eig(DRef)
+            eig_MTFD = 2*eig_MTFD-1
+            
+            RE_ry = fac*self.get_renyi_(self.renyi, eig_MTFD)   
+        else:
+            RE_ry = 0
 
-        return RE;
+        return RE, RE_ry
         
     
     def get_MI_(self,eig_G11,eig_G22):
@@ -270,20 +313,31 @@ class GetEntFerm:
         
         SAB = self.get_S_(self.eig_gamma)
         
-        MI = SA+SB-SAB;
+        MI = SA+SB-SAB
         
-        return MI;
+        if self.renyi > 0:
+            SA = self.get_renyi_(self.renyi, eig_G11)
+            SB = self.get_renyi_(self.renyi, eig_G22)
+            
+            SAB = self.get_renyi_(self.renyi, self.eig_gamma)
+            
+            fac = 1/(1-self.renyi)
+            MI_ry = fac*(SA + SB - SAB)
+        else:
+            MI_ry = 0
+        
+        return MI, MI_ry, SA, SB
         
     
 
 #---------------------------------------------------------------------------#
 
 def my_sqrt_(x):   
-    if abs(x.imag) < 10**(-9) and x >= 0:
+    if abs(x.imag) < 10**(-5) and x >= 0:
         # When x is real and positive
         return np.sqrt(x)
     
-    elif abs(x.imag) < 10**(-9):
+    elif abs(x.imag) < 10**(-5):
         # When x is real and negative
         return np.sqrt(abs(x))*1j
     

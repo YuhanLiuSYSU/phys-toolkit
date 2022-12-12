@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from toolkit.check import check_diag
 from eig.decomp import simult_diag, fold_brillouin, simult_diag_old, \
-    sort_biortho, simult_diag_nonh
+    sort_biortho, simult_diag_nonh, sort_ortho
 
 
 Sx = np.array(([0, 1], [1, 0]), dtype=np.complex128)
@@ -21,7 +21,7 @@ Sz = np.array(([1, 0], [0, -1]), dtype=np.complex128)
 # class: Spin_hamiltonian
 #   method: get_hamiltonian
 #           get_P
-#           get_Sz
+#           get_prod_Sz
 #           sort_biortho
 #           check_diag
 #           sort_P
@@ -37,7 +37,9 @@ Sz = np.array(([1, 0], [0, -1]), dtype=np.complex128)
 
 
 class Spin_hamiltonian:
-    """Class for the spin Hamiltonian"""
+    """
+    Class for the spin Hamiltonian
+    """
     
     def __init__(self, N, couple_diag,couple_off,PBC, bands=1, const_term = 0,
                  ep1 = None, ep2 = None):
@@ -85,29 +87,28 @@ class Spin_hamiltonian:
         self.ep1 = ep1
         self.ep2 = ep2
         
-        for couple in self.couple_off: 
-            if len(couple) == 3:
-                couple.append(np.full(N,1))
-            elif len(couple) == 4:
-                if isinstance(couple[3], int):
-                    couple[3] = np.full(N, couple[3])
-                
-        for couple in self.couple_diag:
-            if len(couple) == 3:
-                couple.append(np.full(N,1))
-            elif len(couple) == 4:
-                if isinstance(couple[3], int):
-                    couple[3] = np.full(N, couple[3])
-                       
-        self.get_hamiltonian()
         
-        if PBC == 1 or PBC == -1:
-            self.get_P()
-            print()
-        
-
-        
-        # this generate .hamiltonian and .h2, .P
+        if self.couple_diag is not None:
+            for couple in self.couple_off: 
+                if len(couple) == 3:
+                    couple.append(np.full(N,1))
+                elif len(couple) == 4:
+                    if isinstance(couple[3], int):
+                        couple[3] = np.full(N, couple[3])
+                    
+            for couple in self.couple_diag:
+                if len(couple) == 3:
+                    couple.append(np.full(N,1))
+                elif len(couple) == 4:
+                    if isinstance(couple[3], int):
+                        couple[3] = np.full(N, couple[3])
+                           
+            self.get_hamiltonian()
+            
+            if PBC == 1 or PBC == -1:
+                self.get_P()
+    
+            # this generate .hamiltonian and .h2, .P
         
     
     def get_hamiltonian(self):
@@ -185,19 +186,42 @@ class Spin_hamiltonian:
             hamiltonian = hamiltonian + self.ep1*self.get_P()
         
         if bool(self.ep2):
-            hamiltonian = hamiltonian + self.ep2*get_total_Sz(self.N)
+            hamiltonian = hamiltonian + self.ep2*get_sum_Sz(self.N)
                 
-        self.hamiltonian = hamiltonian
-       # self.hamiltonian = hamiltonian.astype(np.complex128)
+        self.h = hamiltonian
+       # self.h = hamiltonian.astype(np.complex128)
         # This is very necessary
         
         self.h2 = csr_matrix((np.array(valn_array), (x_array, y_array)), 
                              shape=(2**N, 2**N),dtype=np.complex128)
         
         
+    def get_spec(self, knum):
+        # For Ising OBC
+        eigval, eigvec = sort_ortho(self.h, knum=knum)
+        # eigval = eigval - min(eigval)
+        # eigval = eigval*2/(eigval[3]-eigval[0])
+        
+        self.eigval = eigval
+        self.R = eigvec
+        self.L = eigvec
+        
+        return eigval, eigvec
+        
+        
     def get_P(self):
         """
-        Generate translational operator P
+        Generate translational operator P. Translate towards right. 
+        The basis are: |uuuu>, |uuud>, |uudu>, |uudd>, ...
+        
+        -----------
+        For APBC, the following construction works for the Ising model, where:
+            |uuud> -> |uudu>,       |duud> -> -|uudd>
+            |uudd> -> |uddu>,       |duuu> -> -|uuud>
+        This is because the local symmetry generator is Sz, which we use to twist
+        the boundary condition:
+            |u>_{L+1} -> |u>_1
+            |d>_{L+1} -> -|d>_1
         """
         
         N = self.N
@@ -209,11 +233,15 @@ class Spin_hamiltonian:
                                np.arange(1,2**N,4),
                                np.arange(2,2**N,4),
                                np.arange(3,2**N,4)))
+            val_array_P = np.repeat([1,PBC*1,PBC*1,1],2**(N-2))
+            
         elif bands == 1:
             y_array_P = np.hstack((np.arange(0,2**N,2),
                                    np.arange(1,2**N,2)))
+            val_array_P = np.repeat([1,PBC*1],2**(N-1))
+            # TODO: This works, but need to understand why.
             
-        val_array_P = np.repeat([1,PBC*1,PBC*1,1],2**(N-2))
+        
         self.P = csr_matrix((val_array_P, (x_array_P, y_array_P)), shape=(2**N, 2**N))
         
         return self.P
@@ -221,12 +249,12 @@ class Spin_hamiltonian:
         
     def sort_biortho_spin(self,knum, eig_which='SR', PT='true'):
         
-        eigval, R, L = sort_biortho(self.hamiltonian, knum = knum, 
+        eigval, R, L = sort_biortho(self.h, knum = knum, 
                                     eig_which = eig_which, PT = PT)
         
         # TODO: make the following code work...
-        # eigval, R = simult_diag_nonh(self.hamiltonian, 
-        #                              [self.P, get_total_Sz(self.N), get_Sz(self.N)],
+        # eigval, R = simult_diag_nonh(self.h, 
+        #                              [self.P, get_sum_Sz(self.N), get_prod_Sz(self.N)],
         #                              knum = knum)
         
         self.eigval = eigval + self.const_term
@@ -236,7 +264,7 @@ class Spin_hamiltonian:
         return eigval, R
     
 
-    def sort_P(self,knum, is_quiet = 1, is_quiet_debug = 1):
+    def sort_P_old(self,knum, is_quiet = 1, is_quiet_debug = 1):
         """
         For Hermitian case. After finding eigensystems of hamiltonian, we silmultaneously
         diagonalize h and P(translational operator). 
@@ -257,15 +285,15 @@ class Spin_hamiltonian:
 
         """
         
-        self.hamiltonian = self.hamiltonian.astype(np.float64)
+        self.h = self.h.astype(np.float64)
         
-        E, V = eigsh(self.hamiltonian, k=knum, which='SA')
+        E, V = eigsh(self.h, k=knum, which='SA')
         
-        eig_M, V_sort = simult_diag_old(self.hamiltonian, E, V, 
+        eig_M, V_sort = simult_diag_old(self.h, E, V, 
                                     [self.P], 
                                     is_phase = 1, is_quiet = is_quiet, 
                                     is_quiet_debug = is_quiet_debug)
-        # or [self.P, get_total_Sz(self.N)]
+        # or [self.P, get_sum_Sz(self.N)]
         
         
         self.eigval = E
@@ -279,29 +307,54 @@ class Spin_hamiltonian:
         return E, V_sort, eig_M
     
     
-    def sort_P_new(self, knum):
+    def sort_P(self, knum, is_sum_Sz = 1, is_prod_Sz = 0):
+        
+        if is_sum_Sz == 1:
+            M = [self.P, get_sum_Sz(self.N)]
+        elif is_prod_Sz == 1:
+            M = [self.P, self.get_prod_Sz_()]
+        else:
+            M = self.P
+            
         eigval, eigvec, eig_M = simult_diag(
-            self.hamiltonian, [self.P, get_total_Sz(self.N)], knum = knum, is_phase = 1,
+            self.h, M, knum = knum, is_phase = 1,
             is_show = 1)
     
     
         self.eigval = eigval
         self.R = eigvec
         self.L = eigvec
+          
+        if is_sum_Sz == 1:
+            self.S = eig_M[0]
+            self.total_Sz = eig_M[1]
+            self.hp_pair = np.vstack((eigval, eig_M[0].real, eig_M[1].real)).T
+            
+        elif is_prod_Sz == 1:
+            self.S = eig_M[0]
+            self.prod_Sz = eig_M[1]
+            self.hp_pair = np.vstack((eigval, eig_M[0].real, eig_M[1].real)).T
+            
+        else:
+            self.S = eig_M
+            self.hp_pair = np.vstack((eigval, eig_M.real)).T
         
-        self.S = eig_M[0]
-        self.total_Sz = eig_M[1]
-        self.hp_pair = np.vstack((eigval, eig_M[0].real, eig_M[1].real)).T
+        
     
         return eigval, eigvec, eig_M
     
     
-    def sort_P_nonh(self,E,V):
-        P = self.P
+    def sort_P_nonh(self,E,V, M = None, is_phase = 1):
+        
+        if M == None:
+            P = self.P    # Translational symmetry
+        else:
+            P = M           # User input symmetry matrix M
+        
         R = V+np.zeros(V.shape,dtype=complex)
         L = R.conj()
         # Need to specify V is complex. Otherwise it will take real part of V[:,reg]=regV@Vtrans
-        labels=[]
+        labels=[-1]
         for i in range(len(E)-1):
             if (E[i+1]-E[i]).real>0.0000001:
                 labels.append(i)
@@ -326,11 +379,15 @@ class Spin_hamiltonian:
                 # After this, L is not necessary the conjugate of R
         
         P_eig = L.conj().T @ P @ R
-        S = np.angle(P_eig.diagonal())*self.N/(2*pi)
+        if is_phase == 1: # for translational symmetry
+            S = np.angle(P_eig.diagonal())*self.N/(2*pi)
+        else:
+            S = P_eig.diagonal()
+            
         print("error for orthonormal: %f" % 
           check_diag(L.conj().T @ R, is_show = 1))
         print("error for H: %f" % 
-          check_diag(L.conj().T @ self.hamiltonian @ R, is_show = 1))
+          check_diag(L.conj().T @ self.h @ R, is_show = 1))
         print("error for P: %f" % 
           check_diag(P_eig, is_show = 1))
                    
@@ -340,12 +397,40 @@ class Spin_hamiltonian:
         return R, L, S
     
 #----------------------------------------------------------------------------#
+    
+    def get_prod_Sz_(self, flag=0):
+        """ Generate S_z matrix (this is actually the parity!) 
+        S^z_1 \oprod S^z_2 \cdots S^z_N
+        """
+          
+        S_z = get_prod_Sz(self.N, flag = flag)
+      
+        self.prod_S_z = S_z
+        
+        return S_z
+    
+    
+    def get_sum_Sz_(self, flag = 0):
+        """
+        Generate sum of S^z_i
+        """
+        
+        S_z_sum = get_sum_Sz(self.N, flag = flag)
+        
+        return S_z_sum
+        
+        
+
     def find_Sz(self):
         
+        self.get_prod_Sz_()
+        
         eigval = self.eigval
-        eig_P = self.L.conj().T @ self.P @ self.R
-        S = np.angle(eig_P.diagonal())*self.N/(2*pi)
-        eig_Sz = np.diag(self.L.conj().T @ self.S_z @ self.R)
+        # eig_P = self.L.conj().T @ self.P @ self.R
+        # S = np.angle(eig_P.diagonal())*self.N/(2*pi)
+        S = self.S
+        
+        eig_Sz = np.diag(self.L.conj().T @ self.prod_S_z @ self.R)
         eig_Sz_round = np.around(eig_Sz)
                
         # May need to check manually...    
@@ -411,7 +496,7 @@ class Spin_hamiltonian:
         return c, Delta, combine
     
     
-    def fold_S(self):
+    def fold_S(self, usr_N = None):
         """
         Fold the "Brillouin zone" for antiferromagetic case. 
 
@@ -420,13 +505,40 @@ class Spin_hamiltonian:
         S : numpy.array
 
         """        
-        S = fold_brillouin(self.S, self.N)
+        if bool(usr_N):
+            S = fold_brillouin(self.S, usr_N)
+        else:
+            S = fold_brillouin(self.S, self.N)
  
         self.S = S
         
         return S
         
     
+    def PT_eig(self, level=0):
+        "PT symmetry for non-hermitian YL model"
+    
+        pt = self.get_prod_Sz()   
+        r_ev = self.R[:,level]
+        l_ev = self.L[:,level]
+        pt_eig = l_ev.conj().T @ pt @ r_ev.conj()
+        
+        return pt_eig
+    
+    
+    def get_first_Sx(self):
+        "S_x \oprod 1 \oprod 1 ..."
+        
+        N = self.N
+        x_array_Sz = range(0,2**(N),1)
+        y_array_Sz = list(range(int(2**N/2), 2**N,1)) \
+            + list(range(0,int(2**N/2),1))
+        val_array_Sz = np.ones(2**N)
+        
+        first_sx = csr_matrix((val_array_Sz, (x_array_Sz, y_array_Sz)), 
+                              shape=(2**N, 2**N))
+    
+        return first_sx
 #----------------------------------------------------------------------------#
 
 
@@ -570,11 +682,21 @@ def get_Virasoro(hamiltonian,N, couple_off,couple_diag, n_total,a):
     return Ln_total, Lnb_total
 
 #----------------------------------------------------------------------------#
-def get_Sz(N, flag=0):
-    """ Generate S_z matrix (this is actually the parity!) 
-    S^z_1 \oprod S^z_2 \cdots S^z_N
+
+
+def get_trans(N, PBC=1):
     """
-      
+    Obtain the translational operator
+    """
+    
+    anxl = Spin_hamiltonian(N, None, None, PBC)
+    trans = anxl.get_P()
+    
+    return trans
+
+
+def get_prod_Sz(N, flag=0):
+
     x_array_Sz = range(0,2**(N),1)
     y_array_Sz = x_array_Sz
     val_array_Sz = np.array([1,-1])
@@ -585,21 +707,20 @@ def get_Sz(N, flag=0):
         S_z = csr_matrix((val_array_Sz, (x_array_Sz, y_array_Sz)), shape=(2**N, 2**N))
     else:
         S_z = val_array_Sz
-  
+
     return S_z
 
 
-
-def check_totalSz(model, level):
+def check_sum_Sz(model, level):
     """ 
     Example input: 
-        check_totalSz(XXZ,[1,2])
+        check_sum_Sz(XXZ,[1,2])
     """
     
     if isinstance(level, int): level = [level]
     
     vec = model.R[:, level]
-    total_Sz = get_total_Sz(model.N)
+    total_Sz = get_sum_Sz(model.N)
     
     eig_Sz = vec.conj().T @ total_Sz @ vec
     if len(level)>1:
@@ -609,9 +730,9 @@ def check_totalSz(model, level):
 
 
 
-def get_total_Sz(N, flag=0):
+def get_sum_Sz(N, flag=0):
     """ 
-    Generate S^z_1+S^z_2+\cdots + S^z_N    
+    Generate S^z_1+S^z_2+\cdots + S^z_N. This is "Q" in compactified boson model   
     """
       
     x_array_Sz = range(0,2**(N),1)
@@ -633,6 +754,8 @@ def get_total_Sz(N, flag=0):
   
     return S_z
 
+
+    
 
 def extract_c_scaling(E0, E1, L, h, state = 0):
     

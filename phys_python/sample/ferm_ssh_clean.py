@@ -14,7 +14,7 @@ def get_spec(N = 12, is_save = 0):
     # N is the number of unitcell. The total number of atom is 2*N
     NAB = np.array(range(2, N+1-2, 2))
 
-    [w, v, u] = [1.00000000, 1.00000000, 0.0]
+    [w, v, u] = [1.00000000, 2.00000000, 0.0]
     
     bands = 2
     
@@ -34,7 +34,7 @@ def get_spec(N = 12, is_save = 0):
         
     plt.plot(NAB, LN)
                   
-    return LN
+    return NAB, LN
 
 
 def get_LR_corr(u,v,w,bands,sub_N,N_k):
@@ -56,6 +56,15 @@ def get_LR_corr(u,v,w,bands,sub_N,N_k):
 
 
 def find_v_ssh(k, u, v, w):
+    # This is for the non-Hermitian model, where u is actually iu.
+    # For hermitian SSH, it only works for u=0 case. 
+    #------------------------------------------------------------------------
+    # For hermitian critical point at u=0, k=pi, the  matrix element of the Hamiltonian 
+    # is all zero. To obtain the correct eigenvectors, we take the limit k->pi
+    # The two eigenvectors are thus (1,i) and (1,-i)
+    #------------------------------------------------------------------------
+    # 
+    
     vk = w*np.exp(-1j*k)+v
     avk = abs(vk)
     e_phi = cmath.sqrt(cmath.sqrt((u+avk)/(u-avk)))
@@ -70,6 +79,9 @@ def find_v_ssh(k, u, v, w):
     vl_plus = np.array([[vk/avk*c_phi.conjugate()],[s_phi.conjugate()]])
     
     return vr_minus, vl_minus, vr_plus, vl_plus
+
+
+
 
 
 def get_LN_(GammaR,NA,NB):
@@ -92,7 +104,7 @@ def get_LN_(GammaR,NA,NB):
     
     Gc = 1/2*(Gc+Gc.conj().T)
         
-    eig_gc = abs(alg.eig(Gc)[0])
+    eig_gc = alg.eig(Gc)[0]
     eig_gamma = eig_gamma.real
     
 
@@ -111,11 +123,9 @@ def get_renyi_(renyi, gamma):
     eta = (gamma+1)/2
     cutoff = 10**(-7)
     
-    
     eta = eta[eta > cutoff]
     eta = eta[(1-eta) > cutoff]
-   
-        
+       
     Rfac = eta*abs(eta)**(renyi-1)+(1-eta)*abs(1-eta)**(renyi-1)
     R = np.log(Rfac.prod())/2
     
@@ -124,8 +134,8 @@ def get_renyi_(renyi, gamma):
 
 if __name__ == "__main__":
 
-    N = 15
-    LN = get_spec(N = N, is_save = 1)
+    N = 12
+    NAB, LN = get_spec(N = N, is_save = 1)
     print("Negativity: ", LN)
 
         

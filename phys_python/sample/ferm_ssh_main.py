@@ -11,7 +11,6 @@ from entangle.ent_generate import GenerateEnt
 import hamiltonian.ferm_tool as ferm_tool
 
 
-
 Sy = np.array(([0, -1j], [1j, 0]), dtype=np.complex128)
 I2 = np.array(([1, 0], [0, 1]), dtype=np.complex128)
 
@@ -23,6 +22,9 @@ def get_spec(N = 12, is_save = 0):
     
     # N is the number of unitcell. The total number of atom is 2*N
     NAB = np.array(range(2, N+1-2, 2))
+    # debug 
+    NAB = np.array(range(10, 11, 1))
+    #----end debug
     # NAB = np.array(range(2, N+1-2, 1))
         
     #-------------------------------------------------------------------------#
@@ -50,7 +52,7 @@ def get_spec(N = 12, is_save = 0):
     # Hermitian SSH critical point
     elif model == 3:
         [w, v, u, model_name, is_non_herm, PT, offset, renyi] = [
-                  1.00000000, 1.00000000, 0.0, 'herm SSH', 0, 'true', 0, 1/2]
+                  2.00000000, 1.00000000, 0.0, 'herm SSH', 0, 'true', 0, 1/2]
     
     # [w, v, u, model_name, is_non_herm, PT, offset] = [
     #         1.00000000, 1.00000000, 0.0, 'herm SSH', 0, 'true', 10**(-7)]
@@ -66,9 +68,17 @@ def get_spec(N = 12, is_save = 0):
     result_ent = GenerateEnt(ent_type, NAB, N, renyi = renyi)
 
     # Get the left and right eigenvectors, and the correlation matrix
-    Corr = Ferm.get_LR_corr(NAB)      
-    Gamma = np.kron(Corr-Corr.transpose(),I2)+np.kron(np.eye(2*max(NAB))
-                                                      -Corr-Corr.transpose(),Sy)
+    Ferm.many_eig(cutoff = 1000, is_fold=1)
+    combine = Ferm.combine
+    # TODO: finish this. Use H to find eigenvectors, using simult_diag_nonh.    
+    
+    
+    Corr, Gamma = Ferm.get_gamma(Ferm.lst[0])
+    
+    
+    # Corr = Ferm.get_LR_corr(NAB)      
+    # Gamma = np.kron(Corr-Corr.transpose(),I2)+np.kron(np.eye(2*max(NAB))
+    #                                                   -Corr-Corr.transpose(),Sy)
     
     for i in range(len(NAB)):
         LAB = NAB[i];

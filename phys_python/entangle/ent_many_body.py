@@ -13,12 +13,13 @@ import scipy.linalg as alg
 
 from toolkit.file_io import File_access
 from toolkit.plot_style import plot_style_single
-from hamiltonian.spin_tool import get_Sz
+from hamiltonian.spin_tool import get_prod_Sz
 from entangle.ent_fit import fit_ent 
 
 
 
-def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho', isfit = 1, is_savefig = 0, even_odd = ''):
+def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho', 
+                       isfit = 1, is_savefig = 0, even_odd = ''):
     
     state_R, state_L, N = Model.R[:,level], Model.L[:,level], Model.N
     #state_R, state_L, N = Model.eigvec[:,level], Model.eigvec[:,level], Model.N
@@ -89,13 +90,13 @@ def get_ent_many(vR,vL,N,interval, q=-10, segment='left',renyi=1):
     S_Az = sparse_id(2**interval)
     
     if q!=-10:
-        sz = get_Sz(interval,flag=1)
+        sz = get_prod_Sz(interval,flag=1)
         val_array_Sz = q**(-sz)
         x_array_Sz = range(0,2**(interval),1)
         y_array_Sz = x_array_Sz
         S_Az = csr_matrix((val_array_Sz, (x_array_Sz, y_array_Sz)), shape=(2**interval, 2**interval))
         
-        sz = get_Sz(N-interval,flag=1)
+        sz = get_prod_Sz(N-interval,flag=1)
         val_array_Sz = q**(sz)
         x_array_Sz = range(0,2**(N-interval),1)
         y_array_Sz = x_array_Sz

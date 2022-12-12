@@ -4,22 +4,25 @@ Created on Fri Oct  1 15:59:29 2021
 @author: Yuhan Liu (yuhanliu@uchicago.edu)
 """
 
-import matplotlib
-matplotlib.rcParams['text.usetex'] = True
+
 import matplotlib.pyplot as plt
+plt.rcParams.update({
+    'text.usetex': True,
+    'text.latex.preamble': r'\usepackage{amsfonts,bbm,amsmath,dsfont}'
+})
 import numpy as np
 
 
 from entangle.ent_fit import fit_ent
 
-
-SMALL_SIZE = 18
-MEDIUM_SIZE = 20
-BIG_SIZE = 22
+# default: 20
+SMALL_SIZE = 20
+MEDIUM_SIZE = SMALL_SIZE+2
+BIG_SIZE = SMALL_SIZE+4
 
 
 def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
-    x_power = [1/(i**power) for i in x]
+    x_power = np.array([1/(i**power) for i in x])
     
     xline=np.arange(0, max(x_power)*1.1, max(x_power)/50)
     
@@ -30,14 +33,20 @@ def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
     ax = fig.add_subplot(121)
     
     
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.plot(x_power,y,'bo',xline,fn(xline),'--k')
+    ax,_ = plot_s(x_power,y, pre_ax = ax, scatter_size = 30,
+                        x_labels=xlabel, y_labels=ylabel, is_line = 0)
+    
+    plot_s(xline,fn(xline), pre_ax = ax, title = title,
+                        x_labels=xlabel, y_labels=ylabel, is_scatter = 0)
+    
+    # ax.set_title(title)
+    # ax.set_xlabel(xlabel)
+    # ax.set_ylabel(ylabel)
+    # ax.plot(x_power,y,'bo',xline,fn(xline),'--k')
     
     plt.show()
     
-    return fn
+    return coef
 
 
 def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
@@ -56,14 +65,15 @@ def plot_style_single(plt, x_labels = None, y_labels = None, title = None,
     return fig
 
 
-def plot_style_s(x_datas, y_datas, 
+def plot_s(x_datas=None, y_datas=None, init=0,
                  x_labels = None, y_labels = None, title = None, 
                  x_lim = None, y_lim = None,
                  is_scatter = 1, scatter_size = 10,
                  is_line = 1, line_labels = None,
-                 N = 0, fit_type = -10, usr_func = 0, 
+                 N = 0, fit_type = -10, usr_func = 0, p0 = None,
                  Dir = None, add_text = None, add_label = None,
                  pre_ax = None, is_log = 0, my_color = None,
+                 my_marker = 'o',
                  sequence = 1):
     """
     
@@ -82,10 +92,18 @@ def plot_style_s(x_datas, y_datas,
         1: EE
         2: MI
         3: LN
-        else: user defined function "usr_func"
+        -1: user defined function "usr_func"
               
     usr_func : lambda function, optional
         User-defined fit function. The default is 0.
+        Example usage:
+            x_data = [12,14,16,18,20]
+            y_data = [0.7424, 0.7344, 0.7275, 0.7215, 0.7162]
+            
+            usr_func = lambda x, a, b, c: b*x**(-a)+c
+            coeffs = plot_style_s(x_data, y_data,
+                                  x_labels = "$L$", y_labels = "$III$",
+                                  fit_type = -1, usr_func = usr_func)
 
     sequence: float
         Takes value from 0 to 1.
@@ -96,6 +114,7 @@ def plot_style_s(x_datas, y_datas,
     
 
     """
+    y_datas = np.real(y_datas)
     
     if not bool(pre_ax): 
         fig = plt.figure(figsize=(6, 4.5))
@@ -103,12 +122,21 @@ def plot_style_s(x_datas, y_datas,
     else:
         ax = pre_ax
     
+    # Initialization
+    if init==1:
+        return ax, 0
+    
+    # save figure at the last step
+    if bool(Dir): 
+        fig = plt.gcf()
+        Dir.save_fig(fig)
+        return 0
     
     plt.rc('axes', labelsize = MEDIUM_SIZE)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('figure', titlesize = BIG_SIZE)     # fontsize of the figure title
-    plt.rc('legend', fontsize = SMALL_SIZE)    
+    plt.rc('legend', fontsize = SMALL_SIZE-2)    
     
     
     # Accomadate different input type
@@ -124,7 +152,8 @@ def plot_style_s(x_datas, y_datas,
         
         if is_scatter: 
             if bool(my_color):
-                line = ax.scatter(x_data, y_data, scatter_size, color = my_color)
+                line = ax.scatter(x_data, y_data, scatter_size, 
+                                  color = my_color, marker = my_marker)
             else:
                 line = ax.scatter(x_data, y_data, scatter_size)
                 
@@ -134,11 +163,18 @@ def plot_style_s(x_datas, y_datas,
             else:
                 line, = ax.plot(x_data, y_data)
 
-        if bool(line_labels): line.set_label(line_labels[i])
+        
+        if bool(line_labels): 
+            if len(y_datas) == 1:
+                line.set_label(line_labels)
+            else:
+                line.set_label(line_labels[i])
         
               
     ax.grid(True)
-    if bool(line_labels): ax.legend(frameon = True)
+    if bool(line_labels): 
+        ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
+                  loc='upper left', borderaxespad=0)
     
     if is_log == 1:
         ax.set_xscale("log")
@@ -156,7 +192,7 @@ def plot_style_s(x_datas, y_datas,
     
     ax = plt.gca()
     if bool(add_text):        
-        ax.text(0.8, 0.9, add_text,
+        ax.text(0.72, 0.9, add_text,
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes, fontsize = SMALL_SIZE)
@@ -168,12 +204,18 @@ def plot_style_s(x_datas, y_datas,
             transform=ax.transAxes, fontsize = SMALL_SIZE)
     
     if fit_type>-10:
+        if N == 0 and fit_type !=-1:
+            print(" [plot_style] --! Total system size is 0 in the fit! ")
+        
         n = 1
+        if isinstance(x_data, range):
+            x_data = np.array(x_data)
+        
         coeffs, coeffs_cov, fit_func = fit_ent(
             x_data, y_data, N, fit_type = fit_type, renyi = n, 
-            usr_func = usr_func)
+            usr_func = usr_func, p0 = p0)
        
-        text_content = "$ a = %1.4f $" % coeffs[0]
+        text_content = "$ p = %1.4f $" % coeffs[0]
         # text_content = str(coeffs)
         # print(text_content)
         
@@ -199,7 +241,8 @@ def plot_style_s(x_datas, y_datas,
 
 
 
-def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], is_save = 0):
+def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], 
+               is_save = 0, title_msg = ''):
     """
     # y_data is a list, contains four data
     Example of usage:
@@ -283,16 +326,15 @@ def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], is_
     for sub_axs,sub_label in zip(np.ravel(axs),labels):
        sub_axs.text(s = sub_label,**text_coords(ax=sub_axs, scalex=scalex, scaley=scaley),fontsize = SMALL_SIZE)
     
-    plt.suptitle('$L = '+str(N)+'\quad \mathrm{(mid)}$')
+    plt.suptitle('$L = '+str(N)+'\quad$'+title_msg)
     plt.tight_layout()
     plt.show()
     
             
     if is_save == 1:
         
-        save_name = input('--- Input the save fig name: (press <ENTER> for not to save)')
-        if save_name!="":
-            fig.savefig(Dir.save_dir+save_name+'.pdf', bbox_inches='tight')
+        Dir.save_fig(fig)
+            # fig.savefig(Dir.save_dir+save_name+'.pdf', bbox_inches='tight')
             
            
             

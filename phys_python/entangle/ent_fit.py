@@ -33,7 +33,7 @@ class FitClass:
         return c/4*np.log((np.sin(pi*x/(2*self.N)))**2/np.sin(pi*x/self.N))+c1
 
 
-def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0):
+def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0, p0 = None):
     """
     I recommend to use this in plot_style_s.py
     
@@ -51,6 +51,9 @@ def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0):
     Fit_func.renyi = renyi
     Fit_func.N = N
     
+    if isinstance(interval,range):
+        interval = np.array(interval)
+    
     if fit_type == 0:
         my_func = lambda x, a, b : a*x+b
     elif fit_type == 1:
@@ -62,6 +65,6 @@ def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0):
     else:
         my_func = usr_func
     
-    coeffs, coeffs_cov = curve_fit(my_func,interval,ent)
+    coeffs, coeffs_cov = curve_fit(my_func,interval,ent, p0 = p0)
     
     return coeffs, coeffs_cov, my_func

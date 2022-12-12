@@ -8,6 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def my_imagesc(matr):
+   
+    plt.imshow(abs(matr), cmap = 'jet')
+    plt.colorbar()
+    # plt.rcParams["figure.figsize"] = (10,10)
+    # plt.xticks(fontsize=20)
+    # plt.yticks(fontsize=20)
+    plt.show()
+
 
 def check_diag(matr, is_show = 0):
     matr_remove = matr-np.diag(np.diag(matr))

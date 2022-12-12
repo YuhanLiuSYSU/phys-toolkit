@@ -9,16 +9,18 @@ import scipy.linalg as alg
 from math import pi
 from scipy.sparse import issparse
 from scipy.sparse.linalg import eigs as sparse_eigs
+from copy import copy
 # from scipy.sparse.linalg import eigsh as sparse_eigsh
 
 from toolkit.check import check_zero, check_symmetric, \
     check_diag, check_identity
 
 
-ERROR_CUTOFF = 10**(-6)
+ERR_CUTOFF = 10**(-8)
+ERR_CUTOFF_LOOSE = 10**(-4)
 
 
-def sort_ortho(hamiltonian):
+def sort_ortho(h, knum=-1,eig_which='SR'):
     """
     Obtain the eigensystem of hermitian Hamiltonian
 
@@ -34,8 +36,12 @@ def sort_ortho(hamiltonian):
         Every column is an eigenvector.
 
     """
+    n_h = h.shape[0]
     
-    eigval, eigvec = alg.eigh(hamiltonian)
+    if knum > 0 and knum < n_h:
+        eigval, eigvec = sparse_eigs(h, k=knum, which=eig_which)
+    else:
+        eigval, eigvec = alg.eigh(h)
     
     eigval = eigval.real
     V_norm = np.diag(1/np.sqrt(np.diag(eigvec.conj().T @ eigvec)))
@@ -66,7 +72,7 @@ def sort_ortho(hamiltonian):
     if identity_error > 10**(-6): print(
             " --> [sort_ortho] Orthonormal error: %f" % identity_error)
     
-    zero_error = check_zero(eigvec.conj().T @ hamiltonian @ eigvec - np.diag(eigval))
+    zero_error = check_zero(eigvec.conj().T @ h @ eigvec - np.diag(eigval))
     if zero_error > 10**(-6): print(
             " --> [sort_ortho] Decomposition error: %f" % zero_error) 
     
@@ -88,104 +94,207 @@ def sort_block_(regV):
     return regV
 
 
-def sort_biortho(hamiltonian,knum = -1, eig_which='SR', PT='true'):
+
+
+
+def sort_biortho(h,knum = -1, eig_which='SR', PT='true', is_jordan = 0,
+                 is_remove_zero = 0):
     
     # knum is only used for large system
     """
     #--------------------------------------------------------------------------#
     # COMMENT:
     # 1. If H is symmetric, for H|R> = E|R>, H^\dag |L> = E^* |L>, we have:
-    #   |L> = |R>^*
+    #   |L> = |R>^*. Here, PT actually means H is symmetric. 
     #
     # 2. Here PT = 'true' means both the Hamiltonian and the eigenstates preserve
     #   the PT symmetry. This guarantees all the eigenvalues are real.
     #   (Seems like it does not matter in numerics...)
     #--------------------------------------------------------------------------#
-    """
-    
-    if knum > 0:
-        eigval, eigvecs = sparse_eigs(hamiltonian, k=knum, which=eig_which)
-    else:    
-        eigval, eigvecs = alg.eig(hamiltonian)
-        
-    eigval, eigvecs = sort_real(eigval, eigvecs)
 
-    if PT!='true':
+    """
+        
+    
+    n_h = h.shape[0]
+    
+    if knum > 0 and knum < n_h:
+        evl, ev = sparse_eigs(h, k=knum, which=eig_which)
+    else:    
+        if issparse(h):
+            h = h.todense()
+            
+        evl, ev = alg.eig(h)
+        
+    evl, ev = sort_real(evl, ev)
+
+
+    if PT == 'true' and check_symmetric(h):
+        ev_L = ev.conj()
+      
+    else:
+        if PT == 'true':
+            print(" [sort_biortho] Error: Input matrix is not symmetric!")
+            PT = 'false'
+
         if knum > 0:
-            eigval_L, eigvecs_L = sparse_eigs(hamiltonian.conj().T, k=knum, which=eig_which)
+            evl_L, ev_L = sparse_eigs(h.conj().T, k=knum, which=eig_which)
         else:
-            eigval_L, eigvecs_L = alg.eig(hamiltonian.conj().T)
-        idx = eigval_L.argsort()[::1]   
-        eigval_L = eigval_L[idx]
-        eigvecs_L = eigvecs_L[:,idx]
-    
-    
-    V_norm = np.diag(1/np.sqrt(np.diag(eigvecs.conj().T@eigvecs)))
-    eigvecs = eigvecs@V_norm
-    
+            evl_L, ev_L = alg.eig(h.conj().T)
+            
+        evl_L, ev_L = sort_real(evl_L, ev_L)
+     
+        
+    "Remove the elements that are too close to 0 or 1, in the reflected"
+    "entropy calculation"
+    if is_remove_zero == 1:
+        idx = np.where((abs(evl)>10**(-10)) & (abs(evl-1)>10**(-10)))[0]
+        evl = evl[idx]
+        ev = ev[:, idx]
+        ev_L = ev_L[:,idx]
+
+         
     labels=[-1]
-    eigvecs_sort = eigvecs+np.zeros(eigvecs.shape,dtype=complex)
-    for i in range(len(eigval)-1):
-        if abs(eigval[i+1]-eigval[i])>10**(-7):
+    R = ev+np.zeros(ev.shape,dtype=complex)
+    L = ev_L+np.zeros(ev.shape,dtype=complex)
+    
+    for i in range(len(evl)-1):
+        # if abs(evl[i+1]-evl[i]) > ERR_CUTOFF:
+        if abs(evl[i+1])-abs(evl[i]) > ERR_CUTOFF:
             labels.append(i)
             
-    if (labels.count(len(eigval)-1) == 0):
-        labels.append(len(eigval)-1)
+    if (labels.count(len(evl)-1) == 0):
+        labels.append(len(evl)-1)
 
-        
+       
+    # TODO: it seems the result is sensitive to the ERR_CUTOFF in the label 
+    #       computation above...
     for i in range(len(labels)-1):
         if labels[i+1]-labels[i]>1:
             reg = range(labels[i]+1,labels[i+1]+1)
-            regVR = eigvecs[:,reg] 
-            
-            
-            if np.sum(abs(regVR.T@regVR-np.identity(len(reg))))>10**(-7):
+            regVR = ev[:,reg] 
+            regVL = ev_L[:,reg]
+                     
+            if PT == 'true':
+                R[:,reg] = __sort_block(regVR, reg)
+                L[:, reg] = R[:, reg].conj()
                 
-                V_unnorm = __Takagifac(regVR)
-                eig_fac = np.diag(1/np.sqrt(np.diag(V_unnorm.T@V_unnorm)))               
-                
-                V_norm = V_unnorm@eig_fac
-                overlap = V_norm.T @ V_norm
-                
-                check_diag(overlap)
-                
-                subreg = []
-                for j in range(len(reg)-1):
-                    # Sort again
-                    
-                    if abs(overlap[j,j+1])>0.000001:
-                        subreg.extend([j,j+1])
+            else:
+                # regVL  = __sort_block(regVL, reg)
+                R[:, reg], L[:,reg] = __sort_general(regVR, regVL)
                         
-                subreg = list(set(subreg))
-                if subreg!=[]:
-                    
-                    subreg_VR = V_norm[:,subreg]
-                    V_unnorm_2 = __Takagifac(subreg_VR)
-                    eig_fac_2 = np.diag(1/np.sqrt(np.diag(V_unnorm_2.T@V_unnorm_2)))   
-                    V_norm_22 = V_unnorm_2@eig_fac_2
-                    V_norm[:,subreg] = V_norm_22
-                    
-                    # test4 = test
-                    # test4[:,subreg] = V_norm_22
-                    # test3 = test4.T @ test4
-                    # plt.imshow(abs(test3), cmap = 'jet')
-                    # plt.colorbar()
-                                          
-                eigvecs_sort[:,reg] = V_norm
-                
-    V_norm = np.diag(1/np.sqrt(np.diag(eigvecs_sort.T@eigvecs_sort)))
-    eigvecs_sort = eigvecs_sort@V_norm        
+    # TODO: we cannot normalize the Jordan block
+    
+    if is_jordan == 0:
+        V_norm = np.diag(1/np.sqrt(np.diag(L.conj().T@R)))
+        R = R @ V_norm  
+        L = L @ V_norm.conj()        
 
     is_show = 0
-    print(" [sort_biortho] error for orthonormal: %f" % 
-      check_diag(eigvecs_sort.T @ eigvecs_sort,is_show))
-    print(" [sort_biortho] error for H: %f" % 
-      check_diag(abs(eigvecs_sort.T@ hamiltonian @eigvecs_sort),is_show))
+    err_diag = check_diag(L.conj().T @ R,is_show)
+    err_h = check_diag(abs(L.conj().T@ h @R),is_show)
+    if err_diag > ERR_CUTOFF_LOOSE:
+        print(" [sort_biortho] error for orthonormal: %f" %  err_diag)
+    if err_h > ERR_CUTOFF_LOOSE:
+        print(" [sort_biortho] error for H: %f" % err_h)
     
-    R = eigvecs_sort
-    L = eigvecs_sort.conj()
+
+    return evl, R, L
+
+
+def __sort_general(VR, VL):
     
-    return eigval, R, L
+    # Deal with degeneracy in the case where h is not symmetric.
+    # Use the idea of echolon decomposition.
+    
+    N = len(VR.T)
+    A = VL.conj().T @ VR
+    A = A.T
+    
+    VRtr = copy(VR).T
+    
+    j = 0
+    while j<N:
+        for i in range(j+1,N):
+            if abs(A[i,j]) < ERR_CUTOFF:
+                pass
+            elif abs(A[j,j]) < ERR_CUTOFF:
+                A[[i,j]] = A[[j,i]]
+                VRtr[[i,j]] = VRtr[[j,i]]
+            else:
+                fac = (A[i, j]/A[j,j])
+                A[i,:] = A[i,:] - A[j,:]*fac
+                A[i,j] = 0
+                
+                VRtr[i,:] = VRtr[i,:] - VRtr[j,:]*fac
+                
+        j = j+1
+    
+    j = 1
+    while j<N:
+        # TODO: this doesn't deal with general case
+        
+        for i in range(0,j):
+            if abs(A[i,j]) < ERR_CUTOFF:
+                pass
+            else:
+                fac = (A[i,j]/A[j,j])
+                A[i,:] = A[i,:] - A[j,:]*fac
+                A[i,j] = 0
+                
+                VRtr[i,:] = VRtr[i,:] - VRtr[j,:]*fac
+            
+        j = j+1
+        
+    VRtr = VRtr.T
+    
+    """
+    Note: if the diagonal element of VL.conj().T @ VRtr is too small, the error
+    can be huge later on.
+    """
+    # test = VL.conj().T @ VRtr
+    # print(check_diag(test))
+    # print("min", min(abs(np.diag(test))))
+        
+    return VRtr, VL
+
+
+def __sort_block(regVR, reg):
+    
+    if np.sum(abs(regVR.T@regVR-np.identity(len(reg))))>10**(-7):
+        
+        V_unnorm = __Takagifac(regVR)
+        eig_fac = np.diag(1/np.sqrt(np.diag(V_unnorm.T@V_unnorm)))               
+        
+        V_norm = V_unnorm@eig_fac
+        overlap = V_norm.T @ V_norm
+        
+        check_diag(overlap)
+        
+        subreg = []
+        for j in range(len(reg)-1):
+            # Sort again
+            
+            if abs(overlap[j,j+1])>0.000001:
+                subreg.extend([j,j+1])
+                
+        subreg = list(set(subreg))
+        if subreg!=[]:
+            
+            subreg_VR = V_norm[:,subreg]
+            V_unnorm_2 = __Takagifac(subreg_VR)
+            eig_fac_2 = np.diag(1/np.sqrt(np.diag(V_unnorm_2.T@V_unnorm_2)))   
+            V_norm_22 = V_unnorm_2@eig_fac_2
+            V_norm[:,subreg] = V_norm_22
+            
+            # test4 = test
+            # test4[:,subreg] = V_norm_22
+            # test3 = test4.T @ test4
+            # plt.imshow(abs(test3), cmap = 'jet')
+            # plt.colorbar()
+    else:
+        V_norm = regVR
+             
+    return V_norm
 
 
 def __Takagifac(R):
@@ -213,6 +322,52 @@ def __Takagifac(R):
         R = R@Up.T
     
     return R
+
+
+
+def sort_P_nonh(E,V,P,H,N):
+    
+    # TODO: there is a duplicate of this in spin_tool
+
+    R = V+np.zeros(V.shape,dtype=complex)
+    L = R.conj()
+    # Need to specify V is complex. Otherwise it will take real part of V[:,reg]=regV@Vtrans
+    labels=[-1]
+    for i in range(len(E)-1):
+        if (E[i+1]-E[i]).real>0.0000001:
+            labels.append(i)
+            
+    for i in range(len(labels)-1):
+        if labels[i+1]-labels[i]>1:
+            reg=range(labels[i]+1,labels[i+1]+1)
+            regV=V[:,reg]
+            Peig=regV.T @ P @ regV
+            # Sometimes, S obtained from the eigenvalue of Peig is not integer... 
+            # This may because of our numerical way to get the eigensystem. 
+            # Some states might be failed to be included.
+            
+            # Peig is not necessarily hermitian! Using eig might not be safe? 
+            # I guess it is still safe because Peig = V*P_{diag}*V^{-1} is still valid
+            
+            S,Vtrans=alg.eig(Peig)
+            R[:,reg] = regV@Vtrans
+            L[:,reg] = regV.conj()@(alg.inv(Vtrans)).conj().T
+
+            
+            # After this, L is not necessary the conjugate of R
+    
+    P_eig = L.conj().T @ P @ R
+    S = np.angle(P_eig.diagonal())*N/(2*pi)
+    print("error for orthonormal: %f" % 
+      check_diag(L.conj().T @ R, is_show = 1))
+    print("error for H: %f" % 
+      check_diag(L.conj().T @ H @ R, is_show = 1))
+    print("error for P: %f" % 
+      check_diag(P_eig, is_show = 1))
+               
+    
+    return R, L, S
+
 
 
 def simult_diag_nonh(H, M, knum = -1):
@@ -256,10 +411,12 @@ def simult_diag_nonh(H, M, knum = -1):
     return eigval_R, eigvecs_R
 
 
-def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands = 1,
-                is_zero_sym = 1):
+def simult_diag(H, M, knum = -1, which = 'SR', is_phase = 0, is_show = 0, is_sort = 1, 
+                bands = 1, is_zero_sym = 1, N_chain = None):
     
     """
+    simult_diag(H,M) or simult_diag(H,[M0, M1])
+    
     Simultaneously diagonalize H and M. (or H, M[0], M[1])
 
     Although Hp is not hermitian, for some reason, the eigvecs are still 
@@ -275,9 +432,9 @@ def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands =
     
     if issparse(H)==1:
         N_dimH = H.get_shape()[0]
-        N_chain = int(np.log2(N_dimH))
+        if N_chain == None: N_chain = int(np.log2(N_dimH))
     else:
-        N_chain = len(H)
+        if N_chain == None: N_chain = len(H)
     
     
     ep = 10**(-4)
@@ -288,7 +445,7 @@ def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands =
         Hp = H + ep*M[0] + ep2*M[1]
     
     if knum > 0:
-        eigval, eigvecs = sparse_eigs(Hp, k=knum, which='SR')
+        eigval, eigvecs = sparse_eigs(Hp, k=knum, which=which)
     else:
         eigval, eigvecs = alg.eig(Hp)
         
@@ -307,14 +464,14 @@ def simult_diag(H, M, knum = -1, is_phase = 0, is_show = 0, is_sort = 1, bands =
     label = []
     if len(M) == 1:
         for i in range(len(eig_H)-1):
-            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERROR_CUTOFF \
-                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERROR_CUTOFF:
+            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERR_CUTOFF \
+                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERR_CUTOFF:
                     label.append(i)
     elif len(M) == 2:
         for i in range(len(eig_H)-1):
-            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERROR_CUTOFF \
-                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERROR_CUTOFF\
-                    and abs(eig_M1[i,i]-eig_M1[i+1,i+1])<ERROR_CUTOFF:
+            if abs(eig_H[i,i]-eig_H[i+1,i+1])<ERR_CUTOFF \
+                and abs(eig_M0[i,i]-eig_M0[i+1,i+1])<ERR_CUTOFF\
+                    and abs(eig_M1[i,i]-eig_M1[i+1,i+1])<ERR_CUTOFF:
                     label.append(i)
         
    
@@ -493,8 +650,12 @@ def simult_diag_old(H, E, V, M, is_quiet = 1, is_quiet_debug = 1, is_phase = 0):
     return eig_M, V_sort
 
 
-def sort_real(eigval, eigvecs):
-    idx = eigval.real.argsort()[::1]   
+def sort_real(eigval, eigvecs, left = 0):
+    if left == 0:
+        idx = eigval.argsort()[::1] # seems this sort both the real and the imag   
+    elif left == 1:
+        idx = eigval.conj().argsort()[::1]
+    
     eigval = eigval[idx]
     eigvecs = eigvecs[:,idx]
 
@@ -534,7 +695,7 @@ def fold_brillouin(S, N):
     return S
 
 
-def decomp_schur_(K, is_pure_imag = 0):
+def decomp_schur_(K, is_pure_imag = 0, is_reverse=0):
     """
     Schur decomposition for real anti-symmetric matrix.
     ---------------------------------------------------------------
@@ -547,6 +708,8 @@ def decomp_schur_(K, is_pure_imag = 0):
               
     If is_pure_imag == 1, the output T is [0, iLambda; -iLambda, 0],
     output Lambda is iLambda.
+    
+    If is_reverse == 1, the output T is [0, -lambda; lambda, 0]
     ------------------
     return Q, T, Lambda
               
@@ -577,8 +740,13 @@ def decomp_schur_(K, is_pure_imag = 0):
     Lambda = np.zeros(QLen);
     
     for i in range(int(QLen/2)):
-        if T[2*i,2*i+1] < T[2*i+1,2*i]:
-            M[2*i:2*i+2,2*i:2*i+2] = np.array([[0,1],[1,0]]);
+        
+        if is_reverse == 0:
+            if T[2*i,2*i+1] < T[2*i+1,2*i]:
+                M[2*i:2*i+2,2*i:2*i+2] = np.array([[0,1],[1,0]])
+        else:
+            if T[2*i,2*i+1] > T[2*i+1,2*i]:
+                M[2*i:2*i+2,2*i:2*i+2] = np.array([[0,1],[1,0]])
         
         
         Lambdai = abs(T[2*i,2*i+1]);
@@ -632,15 +800,15 @@ def takagi_decomp_(A):
     D = Up.conj() @ A @ Up.conj().T
     
     diag_error = check_diag(D)
-    if diag_error > ERROR_CUTOFF:
+    if diag_error > ERR_CUTOFF:
         print(" --> [takagi_decomp_] D diag error: " + str(diag_error))   
         
     unitary_error = check_zero(Up @ Up.conj().T - np.eye(len(Up)))
-    if unitary_error > ERROR_CUTOFF:
+    if unitary_error > ERR_CUTOFF:
         print(" --> [takagi_decomp_] U unitary error: " + str(unitary_error))
         
     decomp_error = check_zero(A - Up.T @ D @ Up)
-    if decomp_error > ERROR_CUTOFF:
+    if decomp_error > ERR_CUTOFF:
         print(" --> [takagi_decomp_] Decomposition error: " + str(decomp_error))
     
     return D, Up

@@ -6,6 +6,7 @@ Created on Mon Nov  1 15:55:03 2021
 """
 import os
 import pickle
+from sys import platform
 
 
 class File_access:
@@ -29,7 +30,11 @@ class File_access:
             my_dir = ("C:\\Users\\sglil\\OneDrive\\Desktop" + 
                         "\\CS\\python\\spin-chain\\spinIsing\\")
             
-        self.current_dir = os.path.join(my_dir,'save_results\\')
+        if platform == "win32":
+            self.current_dir = os.path.join(my_dir,'save_results\\')
+        elif platform == "linux":
+            self.current_dir = os.path.join(my_dir,'save_results/')
+            
         if os.path.exists(self.current_dir)==False: os.makedirs(self.current_dir)
          
         
@@ -62,11 +67,16 @@ class File_access:
         pickle.dump(append_data, f)
 
                 
-    def save_fig(self,fig):
-        save_name = input(
-            '--- Input the save fig name (press <ENTER> for not to save): ')
+    def save_fig(self,fig, save_name = ""):
+        
+        
+        if save_name == "":
+            save_name = input(
+                '--- Input the save fig name (press <ENTER> for not to save): ')
+            
         if save_name!="":
-            fig.savefig(self.current_dir+save_name+'.pdf', bbox_inches='tight')
+            fig.savefig(self.current_dir+save_name+'.png', bbox_inches='tight', dpi=300)
+            # fig.savefig(self.current_dir+save_name+'.pdf', bbox_inches='tight')
         
         
     def get_back_ext(self,is_from_new):
