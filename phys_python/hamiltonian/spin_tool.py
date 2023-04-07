@@ -247,9 +247,21 @@ class Spin_hamiltonian:
         return self.P
       
         
-    def sort_biortho_spin(self,knum, eig_which='SR', PT='true', is_sort = 1):
+    def sort_biortho_spin(self,knum, M = None, eig_which='SR', PT='true', is_sort = 1):
+        """
+        M is the possible symmetry matrix
+        """
+        ep = 10**(-4)
+        ep2 = 10**(-5)
+        if isinstance(M, list):
+            if len(M)==1:
+                h = self.h + ep*M[0]
+            elif len(M) == 2:
+                h = self.h + ep*M[0] + ep2*M[1]
+        else:
+            h = self.h
         
-        eigval, R, L = sort_biortho(self.h, knum = knum, 
+        eigval, R, L = sort_biortho(h, knum = knum, 
                                     eig_which = eig_which, PT = PT, is_sort=is_sort)
         
         # TODO: make the following code work...
@@ -264,48 +276,6 @@ class Spin_hamiltonian:
         return self.eigval, R
     
 
-    def sort_P_old(self,knum, is_quiet = 1, is_quiet_debug = 1):
-        """
-        For Hermitian case. After finding eigensystems of hamiltonian, we silmultaneously
-        diagonalize h and P(translational operator). 
-
-        Parameters
-        ----------
-        knum : int
-            DESCRIPTION.
-
-        Returns
-        -------
-        E : TYPE
-            DESCRIPTION.
-        V_sort : TYPE
-            DESCRIPTION.
-        S : TYPE
-            DESCRIPTION.
-
-        """
-        
-        self.h = self.h.astype(np.float64)
-        
-        E, V = eigsh(self.h, k=knum, which='SA')
-        
-        eig_M, V_sort = simult_diag_old(self.h, E, V, 
-                                    [self.P], 
-                                    is_phase = 1, is_quiet = is_quiet, 
-                                    is_quiet_debug = is_quiet_debug)
-        # or [self.P, get_sum_Sz(self.N)]
-        
-        
-        self.eigval = E
-        self.R = V_sort
-        self.L = V_sort 
-        # Even here, L and R are the same; we use the same notation so the code 
-        # is compatible with the non-hermitian case.
-        
-        self.S = eig_M
-        
-        return E, V_sort, eig_M
-    
     
     def sort_P(self, knum, is_sum_Sz = 1, is_prod_Sz = 0):
         
