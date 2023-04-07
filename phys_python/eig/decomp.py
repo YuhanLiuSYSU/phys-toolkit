@@ -98,7 +98,7 @@ def sort_block_(regV):
 
 
 def sort_biortho(h,knum = -1, eig_which='SR', PT='true', is_jordan = 0,
-                 is_remove_zero = 0):
+                 is_remove_zero = 0, is_sort = 1):
     
     # knum is only used for large system
     """
@@ -126,6 +126,10 @@ def sort_biortho(h,knum = -1, eig_which='SR', PT='true', is_jordan = 0,
         evl, ev = alg.eig(h)
         
     evl, ev = sort_real(evl, ev)
+    
+    if is_sort == 0:
+        # do not sort
+        return evl, ev, ev
 
 
     if PT == 'true' and check_symmetric(h):

@@ -299,9 +299,6 @@ class Ferm_hamiltonian:
 
 #---------------------------------------------------------------------------#
 
-
-
-
 def find_v(k,u,v,w, model = 1, fill_double = 0):
     
     if model == 1:
@@ -332,6 +329,20 @@ def find_v(k,u,v,w, model = 1, fill_double = 0):
     elif model == -2:
         # Hermitian SSH model
         
+        # if abs(k-pi)<10**(-6) or abs(k+pi)<10**(-6):
+   
+        #     ep = 10**(-9)
+        #     Ek = 0
+        #     Hk = np.array([[1j/ep, 1/ep],
+        #                     [1/ep, -1j/ep]])
+        #     W = 1/2*(np.eye(2)-Hk)
+            
+        #     # W = np.zeros((2,2))
+        #     print("ex pt")
+            
+            
+        # else:
+        
         vk = w*np.exp(-1j*k)+v
         avk = abs(vk)
         Ek = cmath.sqrt(avk**2-u**2)
@@ -351,6 +362,7 @@ def find_v(k,u,v,w, model = 1, fill_double = 0):
         
         
     elif model == 3:
+        # model in Ching Hua's paper
         
         a0 = 1000
         b0 = 1
@@ -368,6 +380,7 @@ def find_v(k,u,v,w, model = 1, fill_double = 0):
         
         
     elif model == 4:
+        # helical HN model
         
         J, gamma = 1, 0.5
         ep = 10**(-7)

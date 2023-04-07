@@ -35,7 +35,7 @@ class FitClass:
 
 def fit_ent(interval, ent, N = 0, renyi = 1, fit_type = 1, usr_func = 0, p0 = None):
     """
-    I recommend to use this in plot_style_s.py
+    I recommend to use this in plot_s.py
     
     Example usage:
         x_data = [12,14,16,18,20]

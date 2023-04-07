@@ -58,12 +58,12 @@ class GenerateEnt:
                 self.MI_ry = np.zeros(pts,dtype=np.complex128)
       
     
-    def update_ent(self, ent, pt1, pt2 = 0):
+    def update_ent(self, ent, pt1, pt2 = -1):
         
         renyi = self.renyi
         ent_type = self.ent_type
         
-        if pt2 == 0:
+        if pt2 == -1:
             pt = pt1
         else:
             pt = (pt1,pt2)

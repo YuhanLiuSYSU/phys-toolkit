@@ -247,10 +247,10 @@ class Spin_hamiltonian:
         return self.P
       
         
-    def sort_biortho_spin(self,knum, eig_which='SR', PT='true'):
+    def sort_biortho_spin(self,knum, eig_which='SR', PT='true', is_sort = 1):
         
         eigval, R, L = sort_biortho(self.h, knum = knum, 
-                                    eig_which = eig_which, PT = PT)
+                                    eig_which = eig_which, PT = PT, is_sort=is_sort)
         
         # TODO: make the following code work...
         # eigval, R = simult_diag_nonh(self.h, 
@@ -261,7 +261,7 @@ class Spin_hamiltonian:
         self.R = R
         self.L = R.conj()
         
-        return eigval, R
+        return self.eigval, R
     
 
     def sort_P_old(self,knum, is_quiet = 1, is_quiet_debug = 1):
@@ -753,6 +753,7 @@ def get_sum_Sz(N, flag=0):
     S_z = S_z/2  
   
     return S_z
+
 
 
     

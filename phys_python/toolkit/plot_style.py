@@ -18,10 +18,10 @@ from entangle.ent_fit import fit_ent
 # default: 20
 SMALL_SIZE = 20
 MEDIUM_SIZE = SMALL_SIZE+2
-BIG_SIZE = SMALL_SIZE+4
+BIG_SIZE = SMALL_SIZE+4 # for x label
 
 
-def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
+def finite_size(x,y,power=2,title='',xlabel='',ylabel='', Dir=None):
     x_power = np.array([1/(i**power) for i in x])
     
     xline=np.arange(0, max(x_power)*1.1, max(x_power)/50)
@@ -36,8 +36,8 @@ def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
     ax,_ = plot_s(x_power,y, pre_ax = ax, scatter_size = 30,
                         x_labels=xlabel, y_labels=ylabel, is_line = 0)
     
-    plot_s(xline,fn(xline), pre_ax = ax, title = title,
-                        x_labels=xlabel, y_labels=ylabel, is_scatter = 0)
+    ax,_ = plot_s(xline,fn(xline), pre_ax = ax, title = title,
+                        x_labels=xlabel, y_labels=ylabel, is_scatter = 0, Dir=Dir)
     
     # ax.set_title(title)
     # ax.set_xlabel(xlabel)
@@ -45,6 +45,7 @@ def finite_size(x,y,power=2,title='',xlabel='',ylabel=''):
     # ax.plot(x_power,y,'bo',xline,fn(xline),'--k')
     
     plt.show()
+    
     
     return coef
 
@@ -114,7 +115,7 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     
 
     """
-    y_datas = np.real(y_datas)
+    # y_datas = np.real(y_datas)
     
     if not bool(pre_ax): 
         fig = plt.figure(figsize=(6, 4.5))
@@ -127,16 +128,16 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         return ax, 0
     
     # save figure at the last step
-    if bool(Dir): 
-        fig = plt.gcf()
-        Dir.save_fig(fig)
-        return 0
+    # if bool(Dir): 
+    #     fig = plt.gcf()
+    #     Dir.save_fig(fig)
+    #     return 0
     
-    plt.rc('axes', labelsize = MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('axes', labelsize = BIG_SIZE)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('figure', titlesize = BIG_SIZE)     # fontsize of the figure title
     plt.rc('legend', fontsize = SMALL_SIZE-2)    
+    plt.rc('axes', titlesize = BIG_SIZE)     # fontsize of the figure title
     
     
     # Accomadate different input type
@@ -144,6 +145,11 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     if not isinstance(x_datas, list): x_datas = [x_datas]
         
     for i, y_data in enumerate(y_datas):
+        # if len(y_datas) == 1:
+        #     color_pt = my_color
+        # else:
+        #     color_pt = my_color[i]
+        color_pt = my_color
         
         if len(x_datas) == 1:
             x_data = x_datas[0]
@@ -151,15 +157,15 @@ def plot_s(x_datas=None, y_datas=None, init=0,
             x_data = x_datas[i]
         
         if is_scatter: 
-            if bool(my_color):
+            if not isinstance(x_datas, bool):
                 line = ax.scatter(x_data, y_data, scatter_size, 
-                                  color = my_color, marker = my_marker)
+                                  color = color_pt, marker = my_marker)
             else:
                 line = ax.scatter(x_data, y_data, scatter_size)
                 
         if is_line:
-            if bool(my_color):
-                line, = ax.plot(x_data, y_data, color = my_color)
+            if not isinstance(x_datas, bool):
+                line, = ax.plot(x_data, y_data, color = color_pt)
             else:
                 line, = ax.plot(x_data, y_data)
 
@@ -173,8 +179,9 @@ def plot_s(x_datas=None, y_datas=None, init=0,
               
     ax.grid(True)
     if bool(line_labels): 
-        ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
-                  loc='upper left', borderaxespad=0)
+        # ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
+        #           loc='upper left', borderaxespad=0)
+        ax.legend(frameon = True,loc='lower left')
     
     if is_log == 1:
         ax.set_xscale("log")
@@ -189,6 +196,7 @@ def plot_s(x_datas=None, y_datas=None, init=0,
        
     # plt.ylim([0.9*abs(y_data.min())*np.sign(y_data.min()),
     #           1.1*abs(y_data.max())*np.sign(y_data.max())])
+    
     
     ax = plt.gca()
     if bool(add_text):        
@@ -216,11 +224,12 @@ def plot_s(x_datas=None, y_datas=None, init=0,
             usr_func = usr_func, p0 = p0)
        
         text_content = "$ p = %1.4f $" % coeffs[0]
+        # text_content = ""  # not print the coeffs
         # text_content = str(coeffs)
-        # print(text_content)
+        print(text_content)
         
         ax = plt.gca()
-        ax.text(0.8 , 0.8, text_content,
+        ax.text(0.8 , 0.5, text_content,
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes, fontsize = SMALL_SIZE)
@@ -228,7 +237,8 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         print(coeffs_cov)
         print(coeffs)
         y_fit = fit_func(x_data, *coeffs)
-        ax.plot(x_data, y_fit, 'tab:orange')
+        ax.plot(x_data, y_fit, 'k',linewidth=1.5)
+        
     else:
         coeffs = None
 
@@ -240,9 +250,8 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     return ax, coeffs
 
 
-
 def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [], 
-               is_save = 0, title_msg = ''):
+                is_save = 0, title_msg = ''):
     """
     # y_data is a list, contains four data
     Example of usage:
@@ -324,7 +333,7 @@ def plot_style(x_data, y_data, Dir = [], N = 0,x_labels = [], y_labels = [],
     labels = ['$\mathrm{(a)}$','$\mathrm{(b)}$','$\mathrm{(c)}$','$\mathrm{(d)}$']
     
     for sub_axs,sub_label in zip(np.ravel(axs),labels):
-       sub_axs.text(s = sub_label,**text_coords(ax=sub_axs, scalex=scalex, scaley=scaley),fontsize = SMALL_SIZE)
+        sub_axs.text(s = sub_label,**text_coords(ax=sub_axs, scalex=scalex, scaley=scaley),fontsize = SMALL_SIZE)
     
     plt.suptitle('$L = '+str(N)+'\quad$'+title_msg)
     plt.tight_layout()
@@ -348,3 +357,4 @@ def text_coords(ax=None,scalex=0.9,scaley=0.9):
 
 #if __name__ == "__main__": 
 #    fit_and_plot(sub_N,y_data,Dir,x_labels=x_labels,y_labels = y_labels)
+ 
