@@ -42,7 +42,7 @@ class Spin_hamiltonian:
     """
     
     def __init__(self, N, couple_diag,couple_off,PBC, bands=1, const_term = 0,
-                 ep1 = None, ep2 = None):
+                 ep1 = None, ep2 = None, spin='1/2', is_hn = 0):
         """
         
 
@@ -81,7 +81,9 @@ class Spin_hamiltonian:
         self.PBC = PBC
         self.couple_diag = couple_diag
         self.couple_off = couple_off 
+        self.spin = spin
         self.const_term = const_term
+        self.is_hn = is_hn
         self.a = 1 # set a default value
         
         self.ep1 = ep1
@@ -120,20 +122,29 @@ class Spin_hamiltonian:
         couple_diag = self.couple_diag
         couple_off = self.couple_off
         const_term = self.const_term
+        is_hn = self.is_hn
+        spin = self.spin
+        if spin == '1/2':
+            bs = 2
+        elif spin == '1':
+            bs = 3
+            
+        print(self.spin)
         
-        n = 2
-        Jdn = (N/(2*pi))* np.array([np.exp(1j*n*(i+1/2)*2*pi/N) for i in range(0,N)])
-        Jsn = (N/(2*pi))*np.array([np.exp(1j*n*(i)*2*pi/N) for i in range(0,N)])
+        if is_hn == 1:
+            n = 2
+            Jdn = (N/(2*pi))* np.array([np.exp(1j*n*(i+1/2)*2*pi/N) for i in range(0,N)])
+            Jsn = (N/(2*pi))*np.array([np.exp(1j*n*(i)*2*pi/N) for i in range(0,N)])
     
     
-        hamiltonian_diag = np.zeros((2**N), dtype=np.complex128)
-        hn_diag = np.zeros((2**N), dtype=np.complex128)
+        hamiltonian_diag = np.zeros((bs**N), dtype=np.complex128)
+        if is_hn == 1: hn_diag = np.zeros((bs**N), dtype=np.complex128)
         # Important to specify it is complex
         
         x_array = []
         y_array = []
         val_array = []
-        valn_array = []
+        if is_hn == 1: valn_array = []
         
         
         for j in range(len(couple_off)):  
@@ -143,20 +154,26 @@ class Spin_hamiltonian:
                     if len(couple)>2:
                     
                         x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
-                            couple[0][i], N, couple[1], i, couple[2], (i+couple[3][i]) % N)
-                        _,_, valn_array_new = set_Hamiltonian_offdiag(
-                            couple[0][i]*Jdn[i], N,couple[1], i, couple[2], (i+couple[3][i]) % N)
+                            couple[0][i], N, couple[1], i, 
+                            couple[2], (i+couple[3][i]) % N, spin)
+                        
+                        if is_hn == 1:
+                            _,_, valn_array_new = set_Hamiltonian_offdiag(
+                                couple[0][i]*Jdn[i], N,couple[1], i, 
+                                couple[2], (i+couple[3][i]) % N, spin)
                         
                     elif len(couple)==2:
                         x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
-                            couple[0][i], N, couple[1], i)
-                        _,_, valn_array_new = set_Hamiltonian_offdiag(
-                            couple[0][i]*Jsn[i], N,couple[1], i)
+                            couple[0][i], N, couple[1], i, spin)
+                        
+                        if is_hn == 1:
+                            _,_, valn_array_new = set_Hamiltonian_offdiag(
+                                couple[0][i]*Jsn[i], N,couple[1], i, spin)
                         
                     x_array.extend(x_array_new)
                     y_array.extend(y_array_new)
                     val_array.extend(val_array_new)
-                    valn_array.extend(valn_array_new)
+                    if is_hn == 1: valn_array.extend(valn_array_new)
     
     
         for j in range(len(couple_diag)):
@@ -165,21 +182,27 @@ class Spin_hamiltonian:
                 if couple[0][i]!=0:
                     if len(couple)>2:
                         hamiltonian_diag += set_Hamiltonian_diag(
-                            couple[0][i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
-                        hn_diag += set_Hamiltonian_diag(
-                            couple[0][i]*Jdn[i],N,couple[1],i,couple[2],(i+couple[3][i]) % N)
+                            couple[0][i],N,couple[1],i,
+                            couple[2],(i+couple[3][i]) % N, spin)
+                        if is_hn == 1:
+                            hn_diag += set_Hamiltonian_diag(
+                                couple[0][i]*Jdn[i],N,couple[1],i,
+                                couple[2],(i+couple[3][i]) % N, spin)
+                    
                     elif len(couple)==2:
-                        hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],N,couple[1],i)
-                        hn_diag += set_Hamiltonian_diag(couple[0][i]*Jsn[i],N,couple[1],i)
+                        hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],N,couple[1],i,spin)
+                        if is_hn == 1:
+                            hn_diag += set_Hamiltonian_diag(couple[0][i]*Jsn[i],N,couple[1],i,spin)
     
     
-        x_array.extend(range(2**N))
-        y_array.extend(range(2**N))
+        x_array.extend(range(bs**N))
+        y_array.extend(range(bs**N))
         val_array.extend(hamiltonian_diag)
-        valn_array.extend(hn_diag)
+        
+        if is_hn == 1: valn_array.extend(hn_diag)
     
         hamiltonian = csr_matrix((np.array(val_array), (x_array, y_array)), 
-                                 shape=(2**N, 2**N),dtype=np.complex128)
+                                 shape=(bs**N, bs**N),dtype=np.complex128)
         
         
         if bool(self.ep1): 
@@ -192,8 +215,9 @@ class Spin_hamiltonian:
        # self.h = hamiltonian.astype(np.complex128)
         # This is very necessary
         
-        self.h2 = csr_matrix((np.array(valn_array), (x_array, y_array)), 
-                             shape=(2**N, 2**N),dtype=np.complex128)
+        if is_hn == 1:
+            self.h2 = csr_matrix((np.array(valn_array), (x_array, y_array)), 
+                                 shape=(bs**N, bs**N),dtype=np.complex128)
         
         
     def get_spec(self, knum):
@@ -207,6 +231,11 @@ class Spin_hamiltonian:
         self.L = eigvec
         
         return eigval, eigvec
+    
+    
+    def h_slice(self, basis):
+        # Slice the Hamiltonian
+        self.h = self.h[basis, :][:, basis]
         
         
     def get_P(self):
@@ -519,7 +548,15 @@ class Spin_hamiltonian:
 
 
 #----------------------------------------------------------------------------#
-def set_Hamiltonian_offdiag(J, N, O1, index1, O2=-1, index2=-1):
+def set_Hamiltonian_offdiag(J, N, O1, index1, O2=-1, index2=-1, spin='1/2'):
+    
+    if spin == '1/2':
+        return set_Hamiltonian_offdiag_spin_half(J, N, O1, index1, O2, index2)
+    elif spin == '1':
+        return set_Hamiltonian_offdiag_spin_one(J, N, O1, index1, O2, index2)
+        
+
+def set_Hamiltonian_offdiag_spin_half(J, N, O1, index1, O2=-1, index2=-1):
     x_array = [0]
     y_array = [0]
     val1_array = [J]
@@ -555,7 +592,71 @@ def set_Hamiltonian_offdiag(J, N, O1, index1, O2=-1, index2=-1):
 
     return x_array, y_array, np.array(val1_array) 
 
-def set_Hamiltonian_diag(J, N, O1, index1,  O2=-1, index2=-1):
+
+def set_Hamiltonian_offdiag_spin_one(J, N, O1, index1, O2=-1, index2=-1):
+    # only accept Sp or Sm imput as this point.
+    # Sp = sqrt(2)[[0,1,0], [0,0,1], [0,0,0]]
+    # Sm = sqrt(2)[[0,0,0], [1,0,0], [0,1,0]]
+    
+    x_array = [0]
+    y_array = [0]
+    val1_array = [J]
+    for i in range(N-1, -1, -1):
+    
+        if(i==index1 or i==index2):
+            x_array_new = [None]*(len(x_array)*2)
+            y_array_new = [None]*(len(y_array)*2)
+            val1_array_new = [None]*(len(val1_array)*2)
+            
+            Op = O1 if i==index1 else O2
+            
+            if Op == 'Sp':
+                x_array_new[::2] = [3*x for x in x_array]
+                y_array_new[::2] = [3*y+1 for y in y_array]
+                val1_array_new[::2] = [val*np.sqrt(2) for val in val1_array]
+                x_array_new[1::2] = [3*x+1 for x in x_array]
+                y_array_new[1::2] = [3*y+2 for y in y_array]
+                val1_array_new[1::2] = [val*np.sqrt(2) for val in val1_array]
+            
+            elif Op == 'Sm':
+                x_array_new[::2] = [3*x+1 for x in x_array]
+                y_array_new[::2] = [3*y for y in y_array]
+                val1_array_new[::2] = [val*np.sqrt(2) for val in val1_array]
+                x_array_new[1::2] = [3*x+2 for x in x_array]
+                y_array_new[1::2] = [3*y+1 for y in y_array]
+                val1_array_new[1::2] = [val*np.sqrt(2) for val in val1_array]
+    
+        else:
+            x_array_new = [None]*(len(x_array)*3)
+            y_array_new = [None]*(len(y_array)*3)
+            val1_array_new = [None]*(len(val1_array)*3)
+            
+            x_array_new[::3] = [3*x for x in x_array]
+            y_array_new[::3] = [3*y for y in y_array]
+            val1_array_new[::3] = val1_array
+            x_array_new[1::3] = [3*x+1 for x in x_array]
+            y_array_new[1::3] = [3*y+1 for y in y_array]
+            val1_array_new[1::3] = val1_array
+            x_array_new[2::3] = [3*x+2 for x in x_array]
+            y_array_new[2::3] = [3*y+2 for y in y_array]
+            val1_array_new[2::3] = val1_array
+
+        x_array = x_array_new
+        y_array = y_array_new
+        val1_array = val1_array_new
+
+    return x_array, y_array, np.array(val1_array) 
+
+
+def set_Hamiltonian_diag(J, N, O1, index1,  O2=-1, index2=-1, spin='1/2'):
+    
+    if spin == '1/2':
+        return set_Hamiltonian_diag_spin_half(J, N, O1, index1,  O2, index2)
+    elif spin == '1':
+        return set_Hamiltonian_diag_spin_one(J, N, O1, index1,  O2, index2)
+
+
+def set_Hamiltonian_diag_spin_half(J, N, O1, index1,  O2=-1, index2=-1):
   # For example, when input index1=0, index2=1, and O=S_z, we will get
   # diag(I\otimes I\otimes \cdots S_z\cdots S_z)     
   
@@ -574,6 +675,29 @@ def set_Hamiltonian_diag(J, N, O1, index1,  O2=-1, index2=-1):
         else:
             val_array_new[::2] = val_array
             val_array_new[1::2] = val_array
+        val_array = val_array_new
+    
+    return np.array(val_array)
+
+
+
+def set_Hamiltonian_diag_spin_one(J, N, O1, index1,  O2=-1, index2=-1):
+    # now only accept operator 'Sz'
+    
+    val_array = [J]
+    for i in range(N-1, -1, -1):
+        val_array_new = [None]*(len(val_array)*3)
+        
+        if(i==index1 or i==index2):
+            val_array_new[::3] = [val*1 for val in val_array]
+            val_array_new[1::3] = [val*0 for val in val_array]
+            val_array_new[2::3] = [val*(-1) for val in val_array]
+
+        else:      
+            val_array_new[::3] = val_array
+            val_array_new[1::3] = val_array
+            val_array_new[2::3] = val_array
+            
         val_array = val_array_new
     
     return np.array(val_array)
