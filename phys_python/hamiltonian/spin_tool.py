@@ -190,9 +190,11 @@ class Spin_hamiltonian:
                                 couple[2],(i+couple[3][i]) % N, spin)
                     
                     elif len(couple)==2:
-                        hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],N,couple[1],i,spin)
+                        hamiltonian_diag += set_Hamiltonian_diag(couple[0][i],
+                                                                 N,couple[1],i,spin=spin)
                         if is_hn == 1:
-                            hn_diag += set_Hamiltonian_diag(couple[0][i]*Jsn[i],N,couple[1],i,spin)
+                            hn_diag += set_Hamiltonian_diag(couple[0][i]*Jsn[i],
+                                                            N,couple[1],i,spin=spin)
     
     
         x_array.extend(range(bs**N))
@@ -650,6 +652,7 @@ def set_Hamiltonian_offdiag_spin_one(J, N, O1, index1, O2=-1, index2=-1):
 
 def set_Hamiltonian_diag(J, N, O1, index1,  O2=-1, index2=-1, spin='1/2'):
     
+    
     if spin == '1/2':
         return set_Hamiltonian_diag_spin_half(J, N, O1, index1,  O2, index2)
     elif spin == '1':
@@ -689,9 +692,14 @@ def set_Hamiltonian_diag_spin_one(J, N, O1, index1,  O2=-1, index2=-1):
         val_array_new = [None]*(len(val_array)*3)
         
         if(i==index1 or i==index2):
-            val_array_new[::3] = [val*1 for val in val_array]
-            val_array_new[1::3] = [val*0 for val in val_array]
-            val_array_new[2::3] = [val*(-1) for val in val_array]
+            Op = O1 if i==index1 else O2
+            
+            if not isinstance(Op, np.ndarray):
+                Op = np.array([1, 0, -1])
+            
+            val_array_new[::3] = [val*Op[0] for val in val_array]
+            val_array_new[1::3] = [val*Op[1] for val in val_array]
+            val_array_new[2::3] = [val*Op[2] for val in val_array]
 
         else:      
             val_array_new[::3] = val_array
