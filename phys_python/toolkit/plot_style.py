@@ -21,10 +21,16 @@ MEDIUM_SIZE = SMALL_SIZE+2
 BIG_SIZE = SMALL_SIZE+4 # for x label
 
 
-def finite_size(x,y,power=2,title='',xlabel='',ylabel='', Dir=None):
+def finite_size(x0,y0,power=2,title='',xlabel='',ylabel='', Dir=None, start=0,
+                add_label = None):
+    
+    x = x0[start:]
+    y = y0[start:]
+    
+    x_power0 = np.array([1/(i**power) for i in x0])
     x_power = np.array([1/(i**power) for i in x])
     
-    xline=np.arange(0, max(x_power)*1.1, max(x_power)/50)
+    xline=np.arange(0, max(x_power0)*1.1, max(x_power0)/50)
     
     coef = np.polyfit(x_power, y, 1)
     fn = np.poly1d(coef) 
@@ -33,11 +39,12 @@ def finite_size(x,y,power=2,title='',xlabel='',ylabel='', Dir=None):
     ax = fig.add_subplot(121)
     
     
-    ax,_ = plot_s(x_power,y, pre_ax = ax, scatter_size = 30,
+    ax,_ = plot_s(x_power0,y0, pre_ax = ax, scatter_size = 30,
                         x_labels=xlabel, y_labels=ylabel, is_line = 0)
     
     ax,_ = plot_s(xline,fn(xline), pre_ax = ax, title = title,
-                        x_labels=xlabel, y_labels=ylabel, is_scatter = 0, Dir=Dir)
+                        x_labels=xlabel, y_labels=ylabel, is_scatter = 0, Dir=Dir,
+                        add_label=add_label)
     
     # ax.set_title(title)
     # ax.set_xlabel(xlabel)
@@ -128,10 +135,10 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         return ax, 0
     
     # save figure at the last step
-    # if bool(Dir): 
-    #     fig = plt.gcf()
-    #     Dir.save_fig(fig)
-    #     return 0
+    if bool(Dir): 
+        fig = plt.gcf()
+        Dir.save_fig(fig)
+        return 0
     
     plt.rc('axes', labelsize = BIG_SIZE)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
@@ -145,11 +152,12 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     if not isinstance(x_datas, list): x_datas = [x_datas]
         
     for i, y_data in enumerate(y_datas):
-        # if len(y_datas) == 1:
-        #     color_pt = my_color
-        # else:
-        #     color_pt = my_color[i]
-        color_pt = my_color
+        if len(y_datas) == 1:
+            color_pt = my_color
+        else:
+            # color_pt = my_color[i]
+            color_pt = my_color
+        # color_pt = my_color
         
         if len(x_datas) == 1:
             x_data = x_datas[0]
@@ -181,7 +189,7 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     if bool(line_labels): 
         # ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
         #           loc='upper left', borderaxespad=0)
-        ax.legend(frameon = True,loc='lower left')
+        ax.legend(frameon = True,loc='upper left')
     
     if is_log == 1:
         ax.set_xscale("log")

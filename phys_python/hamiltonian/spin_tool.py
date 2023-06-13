@@ -302,7 +302,11 @@ class Spin_hamiltonian:
         
         self.eigval = eigval + self.const_term
         self.R = R
-        self.L = R.conj()
+        # ---------------------
+        # This line should be a bug???
+        # self.L = R.conj()
+        #---------------------
+        self.L = L
         
         return self.eigval, R
     
@@ -346,6 +350,10 @@ class Spin_hamiltonian:
     
     
     def sort_P_nonh(self,E,V, M = None, is_phase = 1):
+        #---------------------
+        # This code seems to mess up with L and R...
+        # Use the new one, created on 06/13/2023
+        #---------------------
         
         if M == None:
             P = self.P    # Translational symmetry
@@ -378,6 +386,60 @@ class Spin_hamiltonian:
 
                 
                 # After this, L is not necessary the conjugate of R
+        
+        P_eig = L.conj().T @ P @ R
+        if is_phase == 1: # for translational symmetry
+            S = np.angle(P_eig.diagonal())*self.N/(2*pi)
+        else:
+            S = P_eig.diagonal()
+            
+        print("error for orthonormal: %f" % 
+          check_diag(L.conj().T @ R, is_show = 1))
+        print("error for H: %f" % 
+          check_diag(L.conj().T @ self.h @ R, is_show = 1))
+        print("error for P: %f" % 
+          check_diag(P_eig, is_show = 1))
+                   
+        
+        self.R, self.L, self.S = R, L, S
+        
+        return R, L, S
+    
+    
+    def sort_P_nonh_new(self, M = None, is_phase = 1):
+        
+        if M == None:
+            P = self.P    # Translational symmetry
+        else:
+            P = M           # User input symmetry matrix M
+        
+        R = self.R+np.zeros(self.R.shape,dtype=complex)
+        L = self.L+np.zeros(self.L.shape,dtype=complex)
+        E = self.eigval
+        # Need to specify V is complex. Otherwise it will take real part of V[:,reg]=regV@Vtrans
+        labels=[-1]
+        for i in range(len(E)-1):
+            if (E[i+1]-E[i]).real>0.0000001:
+                labels.append(i)
+                
+        for i in range(len(labels)-1):
+            if labels[i+1]-labels[i]>1:
+                reg=range(labels[i]+1,labels[i+1]+1)
+                regR = R[:,reg]
+                regL = L[:,reg]
+                Peig = regL.conj().T @ P @ regR
+                # Sometimes, S obtained from the eigenvalue of Peig is not integer... 
+                # This may because of our numerical way to get the eigensystem. 
+                # Some states might be failed to be included.
+                
+                # Peig is not necessarily hermitian! Using eig might not be safe? 
+                # I guess it is still safe because Peig = V*P_{diag}*V^{-1} is still valid
+                
+                S,Vtrans=alg.eig(Peig)
+                R[:,reg] = regR @ Vtrans
+                L[:,reg] = regL @ (alg.inv(Vtrans)).conj().T
+
+            
         
         P_eig = L.conj().T @ P @ R
         if is_phase == 1: # for translational symmetry

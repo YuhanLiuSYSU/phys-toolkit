@@ -163,7 +163,7 @@ def sort_biortho(h,knum = -1, eig_which='SR', PT='true', is_jordan = 0,
     
     for i in range(len(evl)-1):
         # if abs(evl[i+1]-evl[i]) > ERR_CUTOFF:
-        if abs(evl[i+1])-abs(evl[i]) > ERR_CUTOFF:
+        if abs(abs(evl[i+1])-abs(evl[i])) > ERR_CUTOFF:
             labels.append(i)
             
     if (labels.count(len(evl)-1) == 0):
