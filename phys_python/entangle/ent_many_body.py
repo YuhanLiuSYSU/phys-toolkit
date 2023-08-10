@@ -59,8 +59,8 @@ def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho',
     if isfit == 1:
         coeffs, fit_cov, fit_func = fit_ent(int_tot, ent_tot, N, renyi = renyi)
         
-        
-        x_data = np.arange(int_tot[0],int_tot[-1],(int_tot[-1]-int_tot[0])/50)
+        data_rg = int_tot[-1]-int_tot[0]
+        x_data = np.arange(int_tot[0],int_tot[-1]+data_rg/50,data_rg/50)
         plt.plot(x_data, fit_func(x_data, *coeffs), 'r-',
          label = 'fit: coeff=%5.3f, offset=%5.3f' % tuple(coeffs))
     else:

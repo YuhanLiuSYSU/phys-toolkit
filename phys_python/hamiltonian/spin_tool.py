@@ -665,6 +665,7 @@ def set_Hamiltonian_offdiag_spin_one(J, N, O1, index1, O2=-1, index2=-1):
     x_array = [0]
     y_array = [0]
     val1_array = [J]
+    
     for i in range(N-1, -1, -1):
     
         if(i==index1 or i==index2):
@@ -747,7 +748,7 @@ def set_Hamiltonian_diag_spin_half(J, N, O1, index1,  O2=-1, index2=-1):
 
 
 def set_Hamiltonian_diag_spin_one(J, N, O1, index1,  O2=-1, index2=-1):
-    # now only accept operator 'Sz'
+    # accept operator 'Sz', or the diagonal elements such as np.array([1, 0, 1])
     
     val_array = [J]
     for i in range(N-1, -1, -1):
@@ -757,6 +758,7 @@ def set_Hamiltonian_diag_spin_one(J, N, O1, index1,  O2=-1, index2=-1):
             Op = O1 if i==index1 else O2
             
             if not isinstance(Op, np.ndarray):
+                # deal with input 'Sz'
                 Op = np.array([1, 0, -1])
             
             val_array_new[::3] = [val*Op[0] for val in val_array]

@@ -135,7 +135,7 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         return ax, 0
     
     # save figure at the last step
-    if bool(Dir): 
+    if bool(Dir) and sequence==2: 
         fig = plt.gcf()
         Dir.save_fig(fig)
         return 0
@@ -189,7 +189,8 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     if bool(line_labels): 
         # ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
         #           loc='upper left', borderaxespad=0)
-        ax.legend(frameon = True,loc='upper left')
+        # ax.legend(frameon = True,loc='upper left')
+        ax.legend(frameon = True)
     
     if is_log == 1:
         ax.set_xscale("log")
