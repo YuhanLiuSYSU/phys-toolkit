@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phys-python"
+version = "0.1.0"
+description = "Reusable primitives for free-fermion and spin-chain numerics"
+authors = [{name = "Yuhan Liu", email = "yuhan.liu@mpq.mpg.de"}]
+requires-python = ">=3.8"
+dependencies = ["numpy", "scipy", "matplotlib"]
+
+# The four subdirectories are installed as top-level packages, so that the
+# existing  "from eig.decomp import ..."  style imports keep working.
+# Install with:   pip install -e .
+# from this directory; then no sys.path juggling or PYTHONPATH entry is needed,
+# and edits to the source take effect immediately.
+[tool.setuptools]
+packages = ["eig", "entangle", "hamiltonian", "toolkit"]
