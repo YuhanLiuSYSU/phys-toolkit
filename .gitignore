@@ -1,0 +1,12 @@
+# Python bytecode caches (regenerated on import; per-interpreter)
+__pycache__/
+*.pyc
+*.pyo
+
+# editable-install / build artifacts
+*.egg-info/
+build/
+dist/
+
+# notebooks
+.ipynb_checkpoints/
