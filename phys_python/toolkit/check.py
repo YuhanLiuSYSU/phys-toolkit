@@ -6,7 +6,7 @@ Created on Mon Nov  1 16:07:23 2021
 """
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.sparse.linalg import norm as sparse_norm
 
 def my_imagesc(matr):
    
@@ -63,9 +63,13 @@ def check_hermitian(a, rtol=1e-05, atol=1e-08):
 
 
 def check_symmetric(a, rtol=1e-05, atol=1e-08):
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+    
+    err = sparse_norm(a-a.T)   
+    return err < atol
 
 
 def check_real(matr):    
     real_error = np.sum(abs(matr.imag))
     return real_error
+
+

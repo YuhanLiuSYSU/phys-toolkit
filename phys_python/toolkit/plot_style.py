@@ -16,7 +16,7 @@ import numpy as np
 from entangle.ent_fit import fit_ent
 
 # default: 20
-SMALL_SIZE = 20
+SMALL_SIZE = 24
 MEDIUM_SIZE = SMALL_SIZE+2
 BIG_SIZE = SMALL_SIZE+4 # for x label
 
@@ -113,8 +113,9 @@ def plot_s(x_datas=None, y_datas=None, init=0,
                                   x_labels = "$L$", y_labels = "$III$",
                                   fit_type = -1, usr_func = usr_func)
 
-    sequence: float
-        Takes value from 0 to 1.
+    sequence: int
+        Takes value in 0,1,2
+        sequence == 2: save figure at the last step
 
     Returns
     -------
@@ -140,11 +141,10 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         Dir.save_fig(fig)
         return 0
     
-    plt.rc('axes', labelsize = BIG_SIZE)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize = SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('legend', fontsize = SMALL_SIZE-2)    
-    plt.rc('axes', titlesize = BIG_SIZE)     # fontsize of the figure title
+
+    params = {'axes.labelsize': BIG_SIZE,'axes.titlesize':BIG_SIZE, \
+              'legend.fontsize': SMALL_SIZE-2, 'xtick.labelsize': SMALL_SIZE, 'ytick.labelsize': SMALL_SIZE}
+    plt.rcParams.update(params)
     
     
     # Accomadate different input type
@@ -155,8 +155,10 @@ def plot_s(x_datas=None, y_datas=None, init=0,
         if len(y_datas) == 1:
             color_pt = my_color
         else:
-            # color_pt = my_color[i]
-            color_pt = my_color
+            if len(my_color)>1:
+                color_pt = my_color[i]
+            else:
+                color_pt = my_color
         # color_pt = my_color
         
         if len(x_datas) == 1:
@@ -189,8 +191,8 @@ def plot_s(x_datas=None, y_datas=None, init=0,
     if bool(line_labels): 
         # ax.legend(frameon = True,bbox_to_anchor=(1.02, 1), 
         #           loc='upper left', borderaxespad=0)
-        # ax.legend(frameon = True,loc='upper left')
-        ax.legend(frameon = True)
+        ax.legend(frameon = True,loc='lower right')
+        # ax.legend(frameon = True)
     
     if is_log == 1:
         ax.set_xscale("log")
@@ -215,7 +217,11 @@ def plot_s(x_datas=None, y_datas=None, init=0,
             transform=ax.transAxes, fontsize = SMALL_SIZE)
         
     if bool(add_label):        
-        ax.text(0.06, 0.94, add_label,
+        # ax.text(0.06, 0.94, add_label,
+        #     horizontalalignment='center',
+        #     verticalalignment='center',
+        #     transform=ax.transAxes, fontsize = SMALL_SIZE)
+        ax.text(0.94, 0.94, add_label,
             horizontalalignment='center',
             verticalalignment='center',
             transform=ax.transAxes, fontsize = SMALL_SIZE)
@@ -363,6 +369,16 @@ def text_coords(ax=None,scalex=0.9,scaley=0.9):
     return {'x':scalex*np.diff(xlims)+xlims[0],
         'y':scaley*np.diff(ylims)+ylims[0]}
 
+
+
+def imagesc(matr):
+   
+        plt.imshow(abs(matr), cmap = 'jet')
+        plt.colorbar()
+        # plt.rcParams["figure.figsize"] = (10,10)
+        # plt.xticks(fontsize=20)
+        # plt.yticks(fontsize=20)
+        plt.show()
 
 #if __name__ == "__main__": 
 #    fit_and_plot(sub_N,y_data,Dir,x_labels=x_labels,y_labels = y_labels)

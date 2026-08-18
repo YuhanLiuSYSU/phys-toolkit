@@ -11,6 +11,7 @@ from scipy.sparse import issparse
 from scipy.sparse.linalg import eigs as sparse_eigs
 from copy import copy
 # from scipy.sparse.linalg import eigsh as sparse_eigsh
+from scipy.sparse import coo_matrix
 
 from toolkit.check import check_zero, check_symmetric, \
     check_diag, check_identity
@@ -699,7 +700,7 @@ def fold_brillouin(S, N):
     return S
 
 
-def decomp_schur_(K, is_pure_imag = 0, is_reverse=0):
+def decomp_schur_(K, is_pure_imag = 0, is_reverse=0, is_sort=1):
     """
     Schur decomposition for real anti-symmetric matrix.
     ---------------------------------------------------------------
@@ -714,6 +715,9 @@ def decomp_schur_(K, is_pure_imag = 0, is_reverse=0):
     output Lambda is iLambda.
     
     If is_reverse == 1, the output T is [0, -lambda; lambda, 0]
+    
+    If is_sor == 1: sort from abs largest to abs smallest
+    If -1, from abs smallest to abs largest
     ------------------
     return Q, T, Lambda
               
@@ -739,29 +743,43 @@ def decomp_schur_(K, is_pure_imag = 0, is_reverse=0):
     T, Q = alg.schur(K, output='real');
     
     QLen = len(Q);
+    Q_len_half = int(QLen/2);
     
-    M = np.eye(QLen)*(1+0*1j);
+    if is_pure_imag == 0:
+        M = np.eye(QLen);
+    else:
+        M = np.eye(QLen)*(1+0*1j);
+        
     Lambda = np.zeros(QLen);
     
-    for i in range(int(QLen/2)):
+    for i in range(Q_len_half):
         
         if is_reverse == 0:
+            ## sort within a block
             if T[2*i,2*i+1] < T[2*i+1,2*i]:
                 M[2*i:2*i+2,2*i:2*i+2] = np.array([[0,1],[1,0]])
         else:
             if T[2*i,2*i+1] > T[2*i+1,2*i]:
                 M[2*i:2*i+2,2*i:2*i+2] = np.array([[0,1],[1,0]])
-        
-        
-        Lambdai = abs(T[2*i,2*i+1]);
-#        if abs(Lambdai-1)<10^(10):
-#            Lambdai = 1;
-        
-        Lambda[2*i] = Lambdai;
-        Lambda[2*i+1] = Lambdai;
-    
+                
+                
     T = M@T@M;
     Q = Q@M;
+                
+    ## is_sort=1: largest abs to smallest abs -------#
+    if is_sort == 1:
+        order = np.argsort(abs(np.diag(T, k=1)[::2]))[::-1]
+    else:
+        order = np.argsort(abs(np.diag(T, k=1)[::2]))
+        
+    I, J = range(Q_len_half), order
+
+    perm = np.kron(coo_matrix(([1]*Q_len_half, (I, J))).todense(), np.eye(2))
+    T = perm @ T @ perm.T
+    Q = Q @ perm.T
+    #-------------------------------------------------#
+    
+    Lambda = np.kron(abs(np.diag(T, k=1))[::2], np.array([1,1]))
     
     # such that K = Q.'*T*Q
     Q = Q.T;
@@ -821,7 +839,7 @@ def takagi_decomp_(A):
 
 if __name__ == "__main__":
     
-    case = 2
+    case = 1
     
     if case == 1:
         K = np.random.rand(4,4)

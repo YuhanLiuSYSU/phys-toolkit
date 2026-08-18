@@ -859,10 +859,21 @@ def get_Hn(N,couple_off,couple_diag,n_total):
          for ii in range(len(couple_off)):   
             couple = couple_off[ii]
             if couple[0][i]!=0:  
-                if len(couple)>2:
+                if len(couple) == 3:
+                    O_set = couple[1]
+                    intv = couple[2]
+                    index_set = np.arange(i, i+intv*len(couple[1]), intv) % N
                     for j in range(n_len):
                         x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
-                            couple[0][i]*Jdn[j,i], N, couple[1], i, couple[2],(i+couple[3][i])%N)
+                            couple[0][i]*Jdn[j,i], N, O_set, index_set)
+                        valn_array[j].extend(val_array_new)
+                elif len(couple) == 4:
+                    O_set = [couple[1], couple[2]]
+                    intv = couple[3][i] if hasattr(couple[3], '__getitem__') else couple[3]
+                    index_set = np.array([i, (i+intv) % N])
+                    for j in range(n_len):
+                        x_array_new, y_array_new, val_array_new = set_Hamiltonian_offdiag(
+                            couple[0][i]*Jdn[j,i], N, O_set, index_set)
                         valn_array[j].extend(val_array_new)
                 elif len(couple)==2:
                     for j in range(n_len):
@@ -876,10 +887,20 @@ def get_Hn(N,couple_off,couple_diag,n_total):
          for ii in range(len(couple_diag)):
              couple = couple_diag[ii]
              if couple[0][i]!=0:  
-                 if len(couple)>2 and couple[0][i]!=0:
+                 if len(couple) == 3 and couple[0][i]!=0:
+                     O_set = couple[1]
+                     intv = couple[2]
+                     index_set = np.arange(i, i+intv*len(couple[1]), intv) % N
                      for j in range(n_len):
                          hn_diag[j] += set_Hamiltonian_diag(
-                             couple[0][i]*Jdn[j,i],N,couple[1],i,couple[2],(i+couple[3][i])%N)
+                             couple[0][i]*Jdn[j,i], N, O_set, index_set)
+                 elif len(couple) == 4 and couple[0][i]!=0:
+                     O_set = [couple[1], couple[2]]
+                     intv = couple[3][i] if hasattr(couple[3], '__getitem__') else couple[3]
+                     index_set = np.array([i, (i+intv) % N])
+                     for j in range(n_len):
+                         hn_diag[j] += set_Hamiltonian_diag(
+                             couple[0][i]*Jdn[j,i], N, O_set, index_set)
                  elif len(couple)==2 and couple[0][i]!=0:
                      for j in range(n_len):
                          hn_diag[j] += set_Hamiltonian_diag(

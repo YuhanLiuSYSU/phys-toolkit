@@ -130,6 +130,8 @@ class Ferm_hamiltonian:
     
     
     def many_eig(self, cutoff = 20, is_fold = 0):
+
+        # this code returns a combination: np.vstack((m_eig, lst_parity, ferm_nb, P_meig)).T
         
         N = self.N
         
@@ -137,9 +139,14 @@ class Ferm_hamiltonian:
         # The result for RE-MI is not accurate. lst[0] and lst[1] gives different result
         if isinstance(self.H,np.ndarray):
         #-----------------------------------------------------
-            trans_op = self.trans_op(bands = self.bands)
-            s_eig, r_eigvec, P_eig = simult_diag(self.H, trans_op, is_phase = 1,
-                                                bands = self.bands, is_zero_sym=1)
+            if self.P in ["+", "-"]:
+                trans_op = self.trans_op(bands = self.bands)
+                s_eig, r_eigvec, P_eig = simult_diag(self.H, trans_op, is_phase = 1,
+                                                    bands = self.bands, is_zero_sym=1)
+            else:
+                # OBC: no translation symmetry, skip crystal-momentum labeling
+                s_eig, r_eigvec = sort_ortho(self.H)
+                P_eig = np.zeros(N)
         #-----------------------------------------------------
         else:
         # Comment: the result for RE-MI is accurate, same for lst[0], lst[1], 
@@ -276,8 +283,9 @@ class Ferm_hamiltonian:
       
         if self.P == "+":
             trans_op[N-1,0] = 1
-        else:
+        elif self.P == "-":
             trans_op[N-1,0] = -1
+        # else: OBC — corner stays 0
             
         if bands > 1:
             trans_op = np.linalg.matrix_power(trans_op,bands)

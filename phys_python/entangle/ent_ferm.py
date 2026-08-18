@@ -105,7 +105,7 @@ class GetEntFerm:
     
         eta = (gamma+1)/2
                 
-        eta = eta[(abs(eta-1)>0.000001) & (abs(eta)>0.000001)]
+        eta = eta[(abs(eta-1)>1E-10) & (abs(eta)>1E-10)]
         eta.reshape(len(eta),1)
                 
         # abs is important to make the non-hermitian ssh model second critial 
@@ -184,6 +184,9 @@ class GetEntFerm:
         # test
         # eig_gc = (alg.eig(Gc)[0])
         # eig_gamma = self.eig_gamma.real
+        
+        testgc = np.sort(eig_gc)
+        testgamma = np.sort(eig_gamma)
         
         R1 = self.get_renyi_(0.5, eig_gc)
         R2 = self.get_renyi_(2, eig_gamma)

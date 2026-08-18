@@ -20,7 +20,7 @@ class FitClass:
         # for entanglement entropy
         
         coe = (self.renyi+1)/(6*self.renyi)
-        #coe = 1/3 ### debug
+        # coe = 1/3 ### debug
         return c*coe*np.log(np.sin(pi*x/self.N))+c1
     
     def fit_func_MI(self,x,c,c1):

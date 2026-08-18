@@ -19,10 +19,11 @@ from entangle.ent_fit import fit_ent
 
 
 def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho', 
-                       isfit = 1, is_savefig = 0, even_odd = ''):
+                       isfit = 1, is_savefig = 0, even_odd = '', is_es=0, es_int=-1):
     
     state_R, state_L, N = Model.R[:,level], Model.L[:,level], Model.N
     #state_R, state_L, N = Model.eigvec[:,level], Model.eigvec[:,level], Model.N
+
     
     if method=='usual':
         state_R = state_R/np.sqrt(state_R.conj().T @ state_R)
@@ -44,13 +45,18 @@ def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho',
     int_tot = np.array(range(start, Model.N, incre))                           
     ent_tot = np.zeros(len(int_tot))
     
+    
+    if es_int == -1: es_int = int(N/2)
+    
     for i in range(len(int_tot)):
         interval = int_tot[i]
                     
         if interval < N/2+1:
-            ent = get_ent_many(state_R, state_L,N,interval,q=q,renyi=renyi)
+            ent, rho_eig_t = get_ent_many(state_R, state_L,N,interval,q=q,renyi=renyi)
             print("entanglement entropy is: %f+%fi" % (ent.real,ent.imag))
             ent_tot[i] = ent.real
+            
+            if interval == es_int: rho_eig = rho_eig_t
         else:
             ent_tot[i] = ent_tot[len(int_tot)-1-i]
     
@@ -74,9 +80,11 @@ def get_ent_many_total(Model, level=0, q=-10, renyi=1, method='biortho',
     if is_savefig == 1:
         Dir = File_access()
         Dir.save_fig(fig) 
-        
-    return int_tot, ent_tot, coeffs
-
+    
+    if is_es == 0:
+        return int_tot, ent_tot, coeffs
+    else:
+        return int_tot, np.sort(np.real(rho_eig))[::-1], ent_tot, coeffs
 
 #----------------------------------------------------------------------------#
 def get_ent_many(vR,vL,N,interval, q=-10, segment='left',renyi=1):
@@ -129,7 +137,7 @@ def get_ent_many(vR,vL,N,interval, q=-10, segment='left',renyi=1):
     # TODO: eig or eigh?
     
     rho_eig = rho_eig + 0.0j
-    rho_eig = rho_eig[abs(rho_eig)>0.00000001]
+    rho_eig = rho_eig[abs(rho_eig)>1E-10]
     
     
     if renyi==1:
@@ -155,6 +163,6 @@ def get_ent_many(vR,vL,N,interval, q=-10, segment='left',renyi=1):
             S = 1/(1-renyi)*np.log((rho_eig*abs(rho_eig)**(renyi-1)).sum())
             # TODO: The second renyi entropy for XXZ doesn't give the correct results...
                 
-    return S
+    return S, rho_eig
 
        
